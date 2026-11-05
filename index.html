@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clear Sight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#263955; --panel:#2e4466; --panel2:#34507a; --fg:#ffedd7; --muted:#c9bba8; --line:#5a6f92;
+  --pro:#7fd6b5; --contra:#ff9f7a; --accent:#ff8a3d;
+  --f:"Inter",system-ui,sans-serif; --mono:"Inter",system-ui,sans-serif;
+}
+body.look-b{
+  --bg:#1d2c47; --panel:#24375a; --panel2:#2c4470; --fg:#f4f1ea; --muted:#b9c3d6; --line:#41587f;
+  --pro:#5ff0c0; --contra:#ff8c6b; --accent:#ffb347;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-size:17px;line-height:1.4}
+.wrap{max-width:1800px;margin:0 auto;padding:28px 32px 20px;display:flex;flex-direction:column;gap:22px;min-height:100vh}
+.oben{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.marke{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:6px 0 0;font-size:clamp(26px,3vw,44px);font-weight:500;line-height:1.05;text-transform:uppercase;text-wrap:balance}
+select{background:var(--panel);color:var(--fg);border:1px dashed var(--line);border-radius:22px;padding:6px 12px;font:inherit;font-size:13px}
+
+/* Kopfzeile: beide Seiten + Satz */
+.waage{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:16px 0}
+.seite{display:flex;flex-direction:column;gap:2px}
+.seite.contra{text-align:right}
+.seite .name{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.seite.pro .name{color:var(--pro)} .seite.contra .name{color:var(--contra)}
+.seite .stufe{font-family:var(--mono);font-weight:500;letter-spacing:-.02em;font-size:clamp(40px,5vw,72px);line-height:1;font-variant-numeric:tabular-nums}
+.seite .klein{font-size:13px;color:var(--muted)}
+.satz{font-size:clamp(18px,1.8vw,26px);font-weight:500;text-align:center;text-transform:uppercase;max-width:620px;text-wrap:balance}
+.balken{display:none}
+body.look-b .balken{display:block;position:relative;height:60px;margin-top:10px}
+body.look-b .balken .stange{position:absolute;left:10%;right:10%;top:20px;height:6px;border-radius:3px;background:var(--fg);
+  transform:rotate(var(--kipp,0deg));transition:transform .6s cubic-bezier(.3,1.4,.5,1);box-shadow:0 0 18px color-mix(in oklab,var(--accent) 50%,transparent)}
+body.look-b .balken .fuss{position:absolute;left:50%;top:26px;width:0;height:0;border:14px solid transparent;border-bottom:26px solid var(--line);transform:translateX(-50%)}
+body.look-b .waage{border:none;background:var(--panel);border-radius:14px;padding:18px 22px;box-shadow:0 0 40px color-mix(in oklab,var(--accent) 12%,transparent)}
+
+/* Spalten */
+.spalten{display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:1}
+.spalte{display:flex;flex-direction:column;gap:12px;min-width:0}
+.spalte > .titel{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.spalte.pro > .titel{color:var(--pro)} .spalte.contra > .titel{color:var(--contra)}
+.leer{color:var(--muted);font-style:italic;font-size:15px}
+.karte{--c:var(--pro);background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.contra .karte{--c:var(--contra)}
+body.look-b .karte{border:none;border-left:5px solid var(--c);box-shadow:0 0 0 1px var(--line),0 0 22px color-mix(in oklab,var(--c) calc(var(--glanz,0) * 1%),transparent)}
+.kopf{display:flex;gap:12px;align-items:flex-start}
+.zahl{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:700;font-size:22px;min-width:46px;text-align:center;padding:4px 6px;border-radius:8px;background:color-mix(in oklab,var(--c) calc(var(--staerke,50) * 1%),var(--panel2));color:#13203a;font-weight:500}
+.text{font-size:17px;line-height:1.35;flex:1}
+.fuss{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:var(--muted);align-items:center}
+.fuss a{color:var(--muted)}
+.tag{border:1px dashed var(--line);border-radius:22px;padding:1px 9px;font-size:12px}
+.tag.warn{border-color:var(--accent);color:var(--accent)}
+.rest{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
+.rest i{display:block;height:100%;background:var(--c);width:calc(var(--rest) * 100%)}
+.tot{opacity:.55}
+.tot .text{text-decoration:line-through;text-decoration-thickness:1px}
+/* Einwände: eingerückt unter der Karte (F21) */
+.einwaende{display:flex;flex-direction:column;gap:8px;margin:4px 0 0 18px;padding-left:14px;border-left:1px dashed var(--line)}
+.einwand{--c:var(--accent);background:var(--bg);border-left-width:3px}
+.einwand .zahl{font-size:16px;background:color-mix(in oklab,var(--accent) 70%,var(--panel2))}
+.einwand .text{font-size:15px}
+
+/* Leiter (F16) */
+.leiter{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.leiter div{display:flex;gap:5px;align-items:baseline}
+.leiter b{font-family:var(--mono);color:var(--fg);font-size:15px}
+@media (max-width:900px){.spalten{grid-template-columns:1fr}.leiter{grid-template-columns:repeat(5,1fr)}.waage{grid-template-columns:1fr}.seite.contra{text-align:left}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="oben">
+    <div><div class="marke" id="marke"></div><h1 id="frage"></h1></div>
+    <select id="look" aria-label="Look"><option value="a">Look A · Nachtblau ruhig</option><option value="b">Look B · Waage mit Leuchten</option></select>
+  </div>
+  <div class="waage" id="waage"></div>
+  <div class="spalten" id="spalten"></div>
+  <div class="leiter" id="leiter"></div>
+</div>
+<script src="rechnen.js"></script>
+<script>
+"use strict";
+// Alle Texte an einer Stelle (F22: Englisch kommt später dazu)
+const TEXT = {
+  marke: "Clear Sight · Beispiel", pro: "Pro", contra: "Contra", leer: "Noch keine Karte",
+  ohneQuelle: "ohne Quelle", stufe: "Stufe", wirktWie: "wirkt wie Stufe", entkraeftet: "ganz entkräftet",
+  nimmt: "nimmt", wirkt: "wirkt nur", gewicht: (s) => s === "–" ? "kein Gewicht" : "Gesamt-Stufe",
+  leiter: ["Kleinigkeit", "Bequemlichkeit", "Geldbeutel vieler", "Last für eine Gruppe", "Existenz bedroht",
+           "Leben in Gefahr", "Katastrophe im Land", "Kontinent", "weltweit", "Ende der Zivilisation"],
+};
+
+// Beispiel aus dem Ausfragen (Felix, 2026-11-05) — wird in Schritt 3 durch echte Eingabe ersetzt
+const thema = {
+  frage: "Ist der Kapitalismus gut für die meisten Menschen?",
+  karten: [
+    { id: "p1", art: "argument", seite: "pro", stufe: 3, text: "Ohne Kapitalismus gäbe es keine Handys.", quelle: "" },
+    { id: "p2", art: "argument", seite: "pro", stufe: 5, text: "Seit 1990 ist extreme Armut weltweit stark gesunken.", quelle: "https://ourworldindata.org/poverty" },
+    { id: "c1", art: "argument", seite: "contra", stufe: 9, text: "Der Wachstumszwang treibt die Klimakatastrophe.", quelle: "https://www.ipcc.ch/report/ar6/syr/" },
+    { id: "c2", art: "argument", seite: "contra", stufe: 4, text: "Die reichsten 10 % besitzen rund drei Viertel des Vermögens.", quelle: "https://wid.world/" },
+    { id: "e1", art: "einwand", ziel: "p1", anteil: 0.5, text: "Handys beruhen auf staatlich bezahlter Forschung (GPS, Internet, Touchscreen).", quelle: "" },
+    { id: "e2", art: "einwand", ziel: "c1", anteil: 0.3, text: "Auch Planwirtschaften hatten hohe Emissionen pro Kopf.", quelle: "" },
+    { id: "e3", art: "einwand", ziel: "e2", anteil: 0.5, text: "Die heutigen Emissionen kommen fast ganz aus Marktwirtschaften.", quelle: "" },
+    { id: "e4", art: "einwand", ziel: "p2", anteil: 0.2, text: "Ein großer Teil des Rückgangs kommt aus China, mit Staatslenkung.", quelle: "" },
+  ],
+};
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const prozent = (x) => Math.round(x * 100) + " %";
+const komma = (x) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(x);
+
+function quelleTag(q) {
+  if (!q) return el("span", "tag warn", TEXT.ohneQuelle);
+  const a = el("a", "", (() => { try { return new URL(q).hostname.replace(/^www\./, ""); } catch { return q; } })());
+  a.href = q; a.target = "_blank"; a.rel = "noopener";
+  return a;
+}
+
+function karteHtml(k, karten) {
+  const rest = Rechnen.rest(k.id, karten);
+  const d = el("div", "karte" + (k.art === "einwand" ? " einwand" : "") + (rest === 0 ? " tot" : ""));
+  const kopf = el("div", "kopf");
+  const fuss = el("div", "fuss");
+  if (k.art === "argument") {
+    d.style.setProperty("--staerke", 20 + k.stufe * 8 * Math.max(rest, 0.15));
+    d.style.setProperty("--glanz", Math.round(k.stufe * 4 * rest));
+    kopf.append(el("div", "zahl", k.stufe), el("div", "text", k.text));
+    if (rest === 0) fuss.append(el("span", "tag", TEXT.entkraeftet));
+    else if (rest < 1) fuss.append(el("span", "tag", `${TEXT.wirktWie} ${komma(Rechnen.stufe(10 ** k.stufe * rest))}`));
+  } else {
+    kopf.append(el("div", "zahl", "−" + Math.round(k.anteil * 100)), el("div", "text", k.text));
+    if (rest === 0) fuss.append(el("span", "tag", TEXT.entkraeftet));
+    else if (rest < 1) fuss.append(el("span", "tag", `${TEXT.wirkt} −${prozent(k.anteil * rest)}`));
+  }
+  fuss.prepend(quelleTag(k.quelle));
+  d.append(kopf);
+  if (k.art === "argument" && rest < 1) { const r = el("div", "rest"); r.style.setProperty("--rest", rest); r.append(el("i")); d.append(r); }
+  d.append(fuss);
+  const kinder = karten.filter((e) => e.art === "einwand" && e.ziel === k.id);
+  if (kinder.length) {
+    const box = el("div", "einwaende");
+    kinder.sort((a, b) => b.anteil * Rechnen.rest(b.id, karten) - a.anteil * Rechnen.rest(a.id, karten))
+          .forEach((e) => box.append(karteHtml(e, karten)));
+    d.append(box);
+  }
+  return d;
+}
+
+function zeichne() {
+  const { karten } = thema;
+  $("marke").textContent = TEXT.marke;
+  $("frage").textContent = thema.frage;
+
+  const s = Rechnen.seiten(karten);
+  const w = $("waage"); w.replaceChildren();
+  const seite = (name, cls, g) => {
+    const d = el("div", "seite " + cls);
+    d.append(el("div", "name", name), el("div", "stufe", Rechnen.stufeText(g)), el("div", "klein", TEXT.gewicht(Rechnen.stufeText(g))));
+    return d;
+  };
+  const mitte = el("div");
+  mitte.append(el("div", "satz", Rechnen.vergleich(karten)));
+  const balken = el("div", "balken"); balken.append(el("div", "fuss"), el("div", "stange"));
+  const diff = (Rechnen.stufe(s.contra) ?? 0) - (Rechnen.stufe(s.pro) ?? 0);
+  balken.firstChild.nextSibling.style.setProperty("--kipp", Math.max(-14, Math.min(14, diff * 2.5)) + "deg");
+  mitte.append(balken);
+  w.append(seite(TEXT.pro, "pro", s.pro), mitte, seite(TEXT.contra, "contra", s.contra));
+
+  const sp = $("spalten"); sp.replaceChildren();
+  for (const [name, cls] of [[TEXT.pro, "pro"], [TEXT.contra, "contra"]]) {
+    const col = el("div", "spalte " + cls);
+    col.append(el("div", "titel", name));
+    const args = karten.filter((k) => k.art === "argument" && k.seite === cls)
+      .sort((a, b) => 10 ** b.stufe * Rechnen.rest(b.id, karten) - 10 ** a.stufe * Rechnen.rest(a.id, karten));
+    if (!args.length) col.append(el("div", "leer", TEXT.leer));
+    args.forEach((k) => col.append(karteHtml(k, karten)));
+    sp.append(col);
+  }
+
+  const l = $("leiter"); l.replaceChildren();
+  TEXT.leiter.forEach((t, i) => { const d = el("div"); d.append(el("b", "", i + 1), el("span", "", t)); l.append(d); });
+}
+
+// Look merken (nur Bequemlichkeit, darf fehlen)
+const lookWahl = $("look");
+function setzeLook(v) { document.body.classList.toggle("look-b", v === "b"); lookWahl.value = v; }
+let gemerkt = "a";
+try { gemerkt = new URLSearchParams(location.search).get("look") || localStorage.getItem("cs-look") || "a"; } catch {}
+setzeLook(gemerkt);
+lookWahl.addEventListener("change", () => { setzeLook(lookWahl.value); try { localStorage.setItem("cs-look", lookWahl.value); } catch {} });
+zeichne();
+</script>
+</body>
+</html>

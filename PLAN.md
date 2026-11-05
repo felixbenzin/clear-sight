@@ -80,7 +80,7 @@ eingerückten Baums, kein Code.
 1. ✅ **Rechen-Regeln + Tests** (2026-11-05, `rechnen.js`, 18 Tests mit `node --test`, Gegenproben rot): Gewicht = 10^Stufe; Einwände: Anteil × was vom Einwand übrig ist, zusammengezählt,
    höchstens 100 %; Einwände gegen Einwände; keine Kreise; Summe pro Seite → Stufe (log10); Satz
    „Contra wiegt N-mal mehr“. Sonderfälle: keine Karten, eine Seite leer, beide Seiten 0.
-2. **Ansicht:** Frage oben, Kopfzeile mit beiden Stufen + Satz, zwei Spalten, Einwände eingerückt, „ohne Quelle“.
+2. ✅ **Ansicht** (2026-11-05, `index.html`, Beispiel-Thema fest eingebaut; Look-Wahl offen): Frage oben, Kopfzeile mit beiden Stufen + Satz, zwei Spalten, Einwände eingerückt, „ohne Quelle“.
    2 Looks in Nachtblau zur Wahl (Bildschirmfoto).
 3. **Bedienung:** Karte anlegen / ändern / löschen, Stufe und Anteil schnell per Tastatur, Strg+Z.
    Knöpfe so, dass sie im Stream nicht stören (F18).
