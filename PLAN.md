@@ -77,7 +77,7 @@ eingerückten Baums, kein Code.
 
 ## Schritte (jeder endet mit etwas, das man ansehen kann)
 
-1. **Rechen-Regeln + Tests:** Gewicht = 10^Stufe; Einwände: Anteil × was vom Einwand übrig ist, zusammengezählt,
+1. ✅ **Rechen-Regeln + Tests** (2026-11-05, `rechnen.js`, 18 Tests mit `node --test`, Gegenproben rot): Gewicht = 10^Stufe; Einwände: Anteil × was vom Einwand übrig ist, zusammengezählt,
    höchstens 100 %; Einwände gegen Einwände; keine Kreise; Summe pro Seite → Stufe (log10); Satz
    „Contra wiegt N-mal mehr“. Sonderfälle: keine Karten, eine Seite leer, beide Seiten 0.
 2. **Ansicht:** Frage oben, Kopfzeile mit beiden Stufen + Satz, zwei Spalten, Einwände eingerückt, „ohne Quelle“.
