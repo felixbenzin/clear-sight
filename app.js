@@ -10,6 +10,11 @@ const TEXT = {
   quellePlatz: "Quelle (Link oder Text)", anlegen: "Anlegen", aendern: "Ändern", abbrechen: "Abbrechen",
   stufe: (n) => `Stufe ${n}`, anteil: (p) => `−${p} %`,
   einwandGegen: (t) => `Einwand gegen: „${t}“`, erstWaehlen: "Für einen Einwand erst eine Karte anklicken.",
+  neu: "Neu", oeffnen: "Öffnen", speichern: "Speichern", ohneDatei: "noch keine Datei",
+  gespeichert: "gespeichert", nichtGespeichert: "nicht gespeichert",
+  gespeichertIn: (n) => `Gespeichert: ${n}`, geoeffnet: (n) => `Geöffnet: ${n} · Strg+Z holt das vorige Thema zurück`,
+  neuesThema: "Neues Thema · Strg+Z holt das vorige zurück", zurueckGeholt: "Letzter Stand wiederhergestellt (Not-Speicher).",
+  speichernFehler: "Speichern ging nicht: ", oeffnenFehler: (n) => `${n} nicht geöffnet: `,
   hilfe: "Karte anklicken, dann: <kbd>1</kbd>–<kbd>0</kbd> Stufe/Anteil · <kbd>E</kbd> Einwand · <kbd>Enter</kbd> ändern · " +
          "<kbd>Entf</kbd> löschen · <kbd>P</kbd>/<kbd>C</kbd> neue Karte · <kbd>Strg</kbd>+<kbd>Z</kbd> zurück · " +
          "<kbd>Strg</kbd>+<kbd>Y</kbd> vor · <kbd>H</kbd> Leiste aus/an",
@@ -22,13 +27,38 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 const komma = (x) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(x);
 const kurz = (t) => (t.length > 60 ? t.slice(0, 57) + "…" : t);
 
+// --- Not-Speicher: nach jeder Änderung eine Kopie im Browser, damit Neuladen oder Absturz nichts kostet.
+// Nur ein Sicherheitsnetz: die echte Ablage ist die Datei (Strg+S).
+const NOT = "cs-notspeicher";
+function leseNotspeicher() {
+  let roh = null;
+  try { roh = localStorage.getItem(NOT); } catch { return null; }
+  if (!roh) return null;
+  try {
+    const n = JSON.parse(roh);
+    return { thema: Bearbeiten.ausDatei(JSON.stringify(n.datei)), name: String(n.name || ""), ungespeichert: !!n.ungespeichert };
+  } catch {
+    try { localStorage.setItem(NOT + "-kaputt", roh); } catch {}   // nicht still wegwerfen
+    return null;
+  }
+}
+function schreibeNotspeicher() {
+  try {
+    localStorage.setItem(NOT, JSON.stringify({ datei: JSON.parse(Bearbeiten.inDatei(thema())), name: datei.name, ungespeichert: ungespeichert() }));
+  } catch {}
+}
+
 // --- Zustand
-const verlauf = Bearbeiten.verlauf({ frage: TEXT.startFrage, karten: [] });
+const alt = leseNotspeicher();
+const verlauf = Bearbeiten.verlauf(alt ? alt.thema : { frage: TEXT.startFrage, karten: [] });
 let gewaehlt = null;              // id der angeklickten Karte
 let art = "pro";                  // was die Leiste anlegt: pro | contra | einwand
 let bearbeitet = null;            // id der Karte, die gerade in der Leiste geändert wird
 const thema = () => verlauf.jetzt();
 const finde = (id) => thema().karten.find((k) => k.id === id);
+// Datei: `stand` = das Thema, wie es zuletzt gespeichert oder geöffnet wurde (gleiches Objekt = nichts geändert)
+const datei = { name: alt ? alt.name : "", handle: null, stand: alt && alt.ungespeichert ? null : verlauf.jetzt() };
+const ungespeichert = () => thema() !== datei.stand && thema().karten.length + (thema().frage !== TEXT.startFrage) > 0;
 
 function aendere(neu) {           // jede Änderung geht hier durch → Strg+Z kennt sie
   verlauf.setze(neu);
@@ -121,6 +151,7 @@ function zeichne() {
     sp.append(col);
   }
   zeichneLeiste();
+  schreibeNotspeicher();
 }
 
 // --- Leiste
@@ -137,6 +168,76 @@ function zeichneLeiste() {
   $("eText").placeholder = ziel ? TEXT.einwandGegen(kurz(ziel.text)) : TEXT.textPlatz[art];
   $("eLos").textContent = bearbeitet ? TEXT.aendern : TEXT.anlegen;
   $("eNein").hidden = !bearbeitet;
+  const offen = ungespeichert();
+  $("dStatus").textContent = (datei.name || TEXT.ohneDatei) + " · " + (offen ? TEXT.nichtGespeichert : TEXT.gespeichert);
+  $("dStatus").classList.toggle("offen", offen);
+}
+
+// --- Datei: Speichern (Strg+S), Öffnen (Strg+O), Neu. Öffnen und Neu sind normale Änderungen → Strg+Z holt zurück.
+const dateiName = () => (thema().frage.toLowerCase().replace(/[^a-z0-9äöüß]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "thema") + ".clear-sight.json";
+const abgebrochen = (e) => e && e.name === "AbortError";
+
+async function speichern() {
+  const inhalt = Bearbeiten.inDatei(thema());
+  try {
+    if (!datei.handle && window.showSaveFilePicker) {
+      datei.handle = await showSaveFilePicker({ suggestedName: dateiName(), types: [{ description: "Clear Sight", accept: { "application/json": [".json"] } }] });
+    }
+    if (datei.handle) {
+      const w = await datei.handle.createWritable();
+      await w.write(inhalt);
+      await w.close();
+      datei.name = datei.handle.name;
+    } else {                                   // Browser ohne Datei-Zugriff: herunterladen
+      datei.name = dateiName();
+      const a = el("a");
+      a.href = URL.createObjectURL(new Blob([inhalt], { type: "application/json" }));
+      a.download = datei.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    datei.stand = thema();
+    zeichne();
+    melde(TEXT.gespeichertIn(datei.name));
+  } catch (e) {
+    if (abgebrochen(e)) return;
+    datei.handle = null;
+    melde(TEXT.speichernFehler + e.message, true);
+  }
+}
+
+function lade(inhalt, name, handle) {
+  try {
+    const t = Bearbeiten.ausDatei(inhalt);
+    gewaehlt = null;
+    if (bearbeitet) beendeAendern();
+    Object.assign(datei, { name, handle, stand: t });
+    aendere(t);
+    melde(TEXT.geoeffnet(name));
+  } catch (e) {
+    if (!(e instanceof Bearbeiten.Fehler)) throw e;
+    melde(TEXT.oeffnenFehler(name) + e.message, true);   // nichts geändert, nichts überschrieben
+  }
+}
+
+async function oeffnen() {
+  if (!window.showOpenFilePicker) { $("dWahl").value = ""; $("dWahl").click(); return; }
+  try {
+    const [h] = await showOpenFilePicker({ types: [{ description: "Clear Sight", accept: { "application/json": [".json"] } }] });
+    const f = await h.getFile();
+    lade(await f.text(), f.name, h);
+  } catch (e) {
+    if (!abgebrochen(e)) melde(TEXT.oeffnenFehler("Datei") + e.message, true);
+  }
+}
+
+function neuesThema() {
+  const t = { frage: TEXT.startFrage, karten: [] };
+  gewaehlt = null;
+  if (bearbeitet) beendeAendern();
+  Object.assign(datei, { name: "", handle: null, stand: t });
+  aendere(t);
+  melde(TEXT.neuesThema);
 }
 
 function waehleArt(a) { art = a; zeichneLeiste(); }
@@ -223,10 +324,12 @@ for (const id of ["eText", "eQuelle"]) {
 const tippt = (t) => t.closest("input, select, textarea, [contenteditable='true']");
 document.addEventListener("keydown", (e) => {
   const strg = e.ctrlKey || e.metaKey;
+  if (strg && !e.shiftKey && e.key.toLowerCase() === "s") { e.preventDefault(); speichern(); return; }
+  if (strg && !e.shiftKey && e.key.toLowerCase() === "o") { e.preventDefault(); oeffnen(); return; }
   if (strg && !tippt(e.target)) {
     const k = e.key.toLowerCase();
-    if (k === "z" && !e.shiftKey) { e.preventDefault(); verlauf.zurueck(); zeichne(); return; }
-    if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); verlauf.vor(); zeichne(); return; }
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); verlauf.zurueck(); zeichne(); melde(); return; }
+    if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); verlauf.vor(); zeichne(); melde(); return; }
   }
   if (strg || e.altKey || tippt(e.target)) return;
   const k = gewaehlt && finde(gewaehlt);
@@ -258,7 +361,18 @@ $("eStufe").value = "3";
 $("eAnteil").value = "5";
 $("eQuelle").placeholder = TEXT.quellePlatz;
 $("eNein").textContent = TEXT.abbrechen;
+$("dNeu").textContent = TEXT.neu;
+$("dAuf").textContent = TEXT.oeffnen;
+$("dSpeichern").textContent = TEXT.speichern;
+$("dNeu").addEventListener("click", neuesThema);
+$("dAuf").addEventListener("click", oeffnen);
+$("dSpeichern").addEventListener("click", speichern);
+$("dWahl").addEventListener("change", async () => {
+  const f = $("dWahl").files[0];
+  if (f) lade(await f.text(), f.name, null);
+});
 const l = $("leiter");
 TEXT.leiter.forEach((t, i) => { const d = el("div"); d.append(el("b", "", i + 1), el("span", "", t)); l.append(d); });
 melde();
 zeichne();
+if (alt) melde(TEXT.zurueckGeholt);

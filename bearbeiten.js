@@ -100,7 +100,37 @@
     };
   }
 
-  const Bearbeiten = { Fehler, neu, aendern, entfernen, frage, verlauf, link };
+  // --- Datei: speichern und öffnen. Dateien kommen von außen → jede Karte wie eine Eingabe prüfen.
+  const FORMAT = "clear-sight";
+  const VERSION = 1;
+
+  function inDatei(thema) {
+    return JSON.stringify({ format: FORMAT, version: VERSION, frage: thema.frage, karten: thema.karten }, null, 1);
+  }
+
+  function ausDatei(inhalt) {
+    let d;
+    try { d = JSON.parse(inhalt); } catch { throw new Fehler("Die Datei ist nicht lesbar (kein gültiges JSON)."); }
+    if (!d || d.format !== FORMAT) throw new Fehler("Das ist keine Clear-Sight-Datei.");
+    if (d.version > VERSION) throw new Fehler("Die Datei stammt aus einer neueren Version von Clear Sight.");
+    if (!Array.isArray(d.karten)) throw new Fehler("In der Datei fehlen die Karten.");
+    const frageText = text(d.frage);
+    const ids = new Set();
+    const karten = d.karten.map((k, i) => {
+      try {
+        if (!k || typeof k.id !== "string" || !/^[\w-]{1,40}$/.test(k.id)) throw new Fehler("Die Nummer fehlt oder ist ungültig.");
+        if (ids.has(k.id)) throw new Fehler(`Die Nummer ${k.id} gibt es doppelt.`);
+        ids.add(k.id);
+        return pruefe(k, d.karten, k.id);
+      } catch (e) {
+        if (e instanceof Fehler) throw new Fehler(`Karte ${i + 1}: ${e.message}`);
+        throw e;
+      }
+    });
+    return { frage: frageText, karten };
+  }
+
+  const Bearbeiten = { Fehler, neu, aendern, entfernen, frage, verlauf, link, inDatei, ausDatei };
   if (typeof module !== "undefined" && module.exports) module.exports = Bearbeiten;
   else wurzel.Bearbeiten = Bearbeiten;
 })(typeof window !== "undefined" ? window : globalThis);

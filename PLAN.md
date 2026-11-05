@@ -84,7 +84,9 @@ eingerückten Baums, kein Code.
    2 Looks in Nachtblau zur Wahl (Bildschirmfoto).
 3. ✅ **Bedienung** (2026-11-05, `bearbeiten.js` + `app.js`, 11 Tests + Klick-Test `e2e/klick.js` mit 19 Prüfungen): Karte anlegen / ändern / löschen, Stufe und Anteil schnell per Tastatur, Strg+Z.
    Knöpfe so, dass sie im Stream nicht stören (F18).
-4. **Speichern + Öffnen** als Datei, Not-Speicher. Kaputte Datei → Meldung, nichts überschreiben.
+4. ✅ **Speichern + Öffnen** (2026-11-05, 13 Tests + 17 Klick-Prüfungen; Strg+S/Strg+O, Öffnen und Neu per Strg+Z umkehrbar) als Datei, Not-Speicher. Kaputte Datei → Meldung, nichts überschreiben.
+   Bekannte Grenzen: Nach dem Neuladen fragt das erste Strg+S wieder nach dem Ort (der Browser merkt sich den
+   Datei-Zugriff nicht über `localStorage`). Strg+Z nach „Neu“ holt das Thema zurück, aber nicht den Dateinamen.
 5. **Abnahme (F9)** in OBS: Frage anlegen, 10 Karten, ein Einwand, Gesamtzahl ändert sich sofort.
 
 ## Version 2 (später)

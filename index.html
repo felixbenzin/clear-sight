@@ -89,6 +89,10 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
 .los{background:var(--accent);color:#1d2c47;border:none;border-radius:22px;padding:8px 18px;font:inherit;font-weight:700;cursor:pointer}
 .nein{background:none;color:var(--muted);border:1px dashed var(--line);border-radius:22px;padding:7px 14px;font:inherit;cursor:pointer}
 .hinweis{font-size:13px;color:var(--muted);min-height:18px}
+.zeile.unten{justify-content:space-between;flex-wrap:nowrap;align-items:flex-start}
+.datei{display:flex;gap:6px;align-items:center;flex-shrink:0;font-size:13px;color:var(--muted)}
+.datei .nein{padding:4px 12px;font-size:13px}
+#dStatus.offen{color:var(--accent)}
 .hinweis .fehler{color:var(--accent)}
 .hinweis kbd{font-family:var(--f);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 2px}
 </style>
@@ -114,7 +118,16 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
       <button type="button" class="los" id="eLos"></button>
       <button type="button" class="nein" id="eNein" hidden></button>
     </div>
-    <div class="hinweis" id="hinweis"></div>
+    <div class="zeile unten">
+      <div class="hinweis" id="hinweis"></div>
+      <div class="datei">
+        <span id="dStatus"></span>
+        <button type="button" class="nein" id="dNeu"></button>
+        <button type="button" class="nein" id="dAuf"></button>
+        <button type="button" class="nein" id="dSpeichern"></button>
+        <input type="file" id="dWahl" accept=".json,application/json" hidden>
+      </div>
+    </div>
   </div>
   <div class="leiter" id="leiter"></div>
 </div>

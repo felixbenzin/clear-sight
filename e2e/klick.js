@@ -72,6 +72,50 @@ const SP = process.argv[2];
   await pruefe("H blendet aus", String(await page.isVisible("#leiste")), "false");
   await page.keyboard.press("h");
   await page.screenshot({ path: SP + "/e2e-2.png" });
+  // --- Schritt 4: Not-Speicher, Speichern, Öffnen, kaputte Datei, Neu
+  await page.keyboard.press("Escape");
+  const satzVorher = await satz();
+  await page.reload();
+  await pruefe("Neu laden: Not-Speicher", await satz(), satzVorher);
+  await pruefe("Neu laden: Meldung", await page.textContent("#hinweis"), "Letzter Stand wiederhergestellt (Not-Speicher).");
+  await pruefe("Status vor Speichern", await page.textContent("#dStatus"), "noch keine Datei · nicht gespeichert");
+  // Speichern: Datei-Dialog durch eine Attrappe ersetzen, die mitschreibt
+  await page.evaluate(() => {
+    window.__datei = null;
+    window.showSaveFilePicker = async () => ({ name: "rente.clear-sight.json",
+      createWritable: async () => ({ write: async (t) => { window.__datei = t; }, close: async () => {} }) });
+  });
+  await page.keyboard.press("Control+s");
+  await page.waitForFunction(() => window.__datei);
+  const gespeichert = JSON.parse(await page.evaluate(() => window.__datei));
+  await pruefe("Datei: Format", gespeichert.format, "clear-sight");
+  await pruefe("Datei: Frage", gespeichert.frage, "Rente mit 70?");
+  await pruefe("Datei: Kartenzahl", String(gespeichert.karten.length), "12"); // 10 + Einwand + „Böse“
+  await pruefe("Status nach Speichern", await page.textContent("#dStatus"), "rente.clear-sight.json · gespeichert");
+  await page.click(".karte:has-text('Pro A1') .text"); await page.keyboard.press("2");
+  await pruefe("Status nach Änderung", await page.textContent("#dStatus"), "rente.clear-sight.json · nicht gespeichert");
+  await page.keyboard.press("Control+z");
+  await pruefe("Strg+Z bis zum gespeicherten Stand", await page.textContent("#dStatus"), "rente.clear-sight.json · gespeichert");
+  // Kaputte Datei öffnen: Meldung, nichts ändert sich
+  const vorher = await satz();
+  await page.setInputFiles("#dWahl", { name: "kaputt.json", mimeType: "application/json", buffer: Buffer.from("{ kaputt") });
+  await pruefe("Kaputte Datei: Meldung", await page.textContent("#hinweis"), "kaputt.json nicht geöffnet: Die Datei ist nicht lesbar (kein gültiges JSON).");
+  await pruefe("Kaputte Datei: nichts geändert", await satz(), vorher);
+  // Gute Datei öffnen, dann Strg+Z
+  const gut = JSON.stringify({ format: "clear-sight", version: 1, frage: "Mindestlohn 15 €?", karten: [
+    { id: "k1", art: "argument", seite: "pro", stufe: 4, text: "Mehr Kaufkraft", quelle: "" }] });
+  await page.setInputFiles("#dWahl", { name: "lohn.json", mimeType: "application/json", buffer: Buffer.from(gut) });
+  await pruefe("Öffnen: Frage", await page.textContent("#frage"), "Mindestlohn 15 €?");
+  await pruefe("Öffnen: Satz", await satz(), "Nur Pro hat Gewicht");
+  await pruefe("Öffnen: Status", await page.textContent("#dStatus"), "lohn.json · gespeichert");
+  await page.click("body", { position: { x: 5, y: 5 } }); await page.keyboard.press("Control+z");
+  await pruefe("Öffnen + Strg+Z", await page.textContent("#frage"), "Rente mit 70?");
+  // Neu, dann Strg+Z
+  await page.click("#dNeu");
+  await pruefe("Neu", await satz(), "Noch keine Karten");
+  await page.keyboard.press("Control+z");
+  await pruefe("Neu + Strg+Z", await page.textContent("#frage"), "Rente mit 70?");
+  await page.screenshot({ path: SP + "/e2e-3.png" });
   console.log(ergebnis.join("\n"));
   console.log("Fehler im Browser:", fehler.length ? fehler : "keine");
   await browser.close();
