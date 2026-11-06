@@ -160,9 +160,16 @@ selbst, keine Bibliothek. YouTube braucht einen Google-Schlüssel mit Tageslimit
 (`BroadcastChannel` oder das `storage`-Ereignis von `localStorage`), prüft Schritt 10, bevor gebaut wird.
 
 **Schritte:**
-10. **Probe**: Twitch-Chat eines laufenden Kanals im Browser mitlesen (von `file://`); zwei Fenster reden miteinander.
+10. ✅ **Probe**: Twitch-Chat eines laufenden Kanals im Browser mitlesen (von `file://`); zwei Fenster reden miteinander.
     Ergebnis: welcher Weg zwischen den Fenstern trägt.
-11. **Regeln + Tests** (`chat.js`, `node --test`): Chat-Zeile lesen (Name, Text); Befehle (F38, F47); Einwand-Nummer
+    **Ergebnis (2026-11-06, Chromium headless, Wegwerf-Code im Scratchpad):** Anonym (`justinfan…`) über
+    `wss://irc-ws.chat.twitch.tv:443` von `file://` aus: verbunden, 14 Kanäle beigetreten, 28 Nachrichten in 15 s, Namen
+    aus dem Tag `display-name`. Zwei Fenster: `BroadcastChannel` ✅, `storage`-Ereignis ✅, direkter Zugriff über
+    `window.opener` ❌ (Browser sperrt: Herkunft „null“). → Warteliste liegt in `localStorage` (übersteht Neuladen, F43),
+    das Warteliste-Fenster schickt „annehmen/ablehnen“ per `BroadcastChannel` ans Stream-Fenster. Das Stream-Fenster hält
+    die Verbindung, damit Vorschläge auch bei geschlossener Warteliste ankommen. Offen: Felix' echter Chrome/Edge unter
+    Windows mit `\\wsl.localhost\…` — prüft Schritt 15.
+11. ✅ **Regeln + Tests** (2026-11-06, `chat.js` + `von` in `bearbeiten.js`, 28 Tests in `test/chat.test.js`, 7 Gegenproben rot): Chat-Zeile lesen (Name, Text); Befehle (F38, F47); Einwand-Nummer
     prüfen (F46); 3-Minuten-Sperre, 300 Zeichen, doppelte (F41); Annehmen macht eine Karte mit `von` (F40).
 12. **Im Stream**: Nummern an den Karten (F45), Hilfe-Zeile (F48), „N Vorschläge warten“ (F39), „Chat getrennt“ (F42).
 13. **Warteliste-Fenster**: Liste, annehmen (Art, Stufe/Anteil, Ziel) mit 2 Klicks, ablehnen. Klick-Test mit

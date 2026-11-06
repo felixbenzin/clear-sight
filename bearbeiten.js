@@ -45,6 +45,13 @@
     }
   }
 
+  // Wer die Karte im Chat vorgeschlagen hat (F40). Freiwillig; fehlt es, gibt es das Feld nicht.
+  function von(v) {
+    if (v == null || v === "") return {};
+    if (typeof v !== "string" || !v.trim() || v.trim().length > 40) throw new Fehler("Der Name im Feld „von“ ist ungültig.");
+    return { von: v.trim() };
+  }
+
   function naechsteId(karten) {
     const n = karten.map((k) => Number(/^k(\d+)$/.exec(k.id)?.[1] ?? 0));
     return "k" + (Math.max(0, ...n) + 1);
@@ -52,7 +59,7 @@
 
   // Baut eine geprüfte Karte. `id` ist die Nummer der Karte selbst (für den Kreis-Check).
   function pruefe(e, karten, id) {
-    const basis = { id, art: e.art, text: text(e.text), quelle: String(e.quelle ?? "").trim() };
+    const basis = { id, art: e.art, text: text(e.text), quelle: String(e.quelle ?? "").trim(), ...von(e.von) };
     if (e.art === "argument") return { ...basis, seite: seite(e.seite), stufe: stufe(e.stufe) };
     if (e.art === "einwand") {
       if (!Rechnen.zielErlaubt(karten, id, e.ziel)) throw new Fehler("Dieser Einwand kann nicht auf diese Karte zeigen.");
