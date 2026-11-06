@@ -99,12 +99,14 @@ const SP = process.argv[2];
   // Kaputte Datei öffnen: Meldung, nichts ändert sich
   const vorher = await satz();
   await page.setInputFiles("#dWahl", { name: "kaputt.json", mimeType: "application/json", buffer: Buffer.from("{ kaputt") });
+  await page.waitForFunction(() => document.querySelector("#hinweis .fehler")); // Datei lesen ist async
   await pruefe("Kaputte Datei: Meldung", await page.textContent("#hinweis"), "kaputt.json nicht geöffnet: Die Datei ist nicht lesbar (kein gültiges JSON).");
   await pruefe("Kaputte Datei: nichts geändert", await satz(), vorher);
   // Gute Datei öffnen, dann Strg+Z
   const gut = JSON.stringify({ format: "clear-sight", version: 1, frage: "Mindestlohn 15 €?", karten: [
     { id: "k1", art: "argument", seite: "pro", stufe: 4, text: "Mehr Kaufkraft", quelle: "" }] });
   await page.setInputFiles("#dWahl", { name: "lohn.json", mimeType: "application/json", buffer: Buffer.from(gut) });
+  await page.waitForFunction(() => document.querySelector("#frage").textContent === "Mindestlohn 15 €?", null, { timeout: 3000 }).catch(() => {});
   await pruefe("Öffnen: Frage", await page.textContent("#frage"), "Mindestlohn 15 €?");
   await pruefe("Öffnen: Satz", await satz(), "Nur Pro hat Gewicht");
   await pruefe("Öffnen: Status", await page.textContent("#dStatus"), "lohn.json · gespeichert");
