@@ -128,7 +128,48 @@ Anlass: Felix' Test-Frage „Wie gut funktioniert die Waage?“ — die Skala �
    F30 ganz durch (inkl. Neuladen der Seite).
 9. ✅ **Abnahme (F30)** durch Felix, auch in OBS (2026-11-06, Felix: „stark, funktioniert“).
 
-## Version 2 (später)
+## Version 2: Chat schlägt vor (ausgefragt 2026-11-06)
 
-- Chat direkt anbinden (F6): `!arg …` in Twitch/YouTube → Warteliste, Felix nimmt an oder lehnt ab.
-- Englische Oberfläche (F22), mehr als zwei Seiten (F2).
+**Vorbilder (2026-11-06):** `gh search repos` nach „twitch chat overlay obs browser source“, „chat overlay obs“,
+„youtube live chat“, „multichat twitch youtube“, „tmi.js“. Ergebnis: Twitch-Chat lässt sich ohne Login und ohne
+Server im Browser mitlesen (anonymes IRC über WebSocket) — so machen es `tmijs/tmi.js` (MIT, 1.590★) und
+`IXenthI/keychat` (GPL-3.0, „zero credentials“). Übernommen: nur die Idee, kein Code; die ~30 Zeilen schreiben wir
+selbst, keine Bibliothek. YouTube braucht einen Google-Schlüssel mit Tageslimit oder einen Server
+(`LinaTsukusu/youtube-chat`, MIT, liest die Chat-Seite in Node) → später.
+
+**Entschieden (Runde 7 + 8, 2026-11-06):**
+- F37 Erst nur Twitch. YouTube später als eigener Schritt.
+- F38 Drei Befehle: `!pro <Text>`, `!contra <Text>`, `!einwand <Nr> <Text>`. Felix kann die Art beim Annehmen ändern.
+  Die Stufe bzw. den Anteil bestimmt immer Felix (F6).
+- F39 Die Warteliste liegt in einem kleinen zweiten Fenster, das OBS nicht aufnimmt. Im Stream steht nur
+  „N Vorschläge warten“. (Einzige Ausnahme von F18 — damit nichts ungeprüft in den Stream kommt.)
+- F40 Angenommene Karten zeigen „von @name“.
+- F41 Pro Person höchstens 1 Vorschlag alle **3 Minuten**, höchstens 300 Zeichen, doppelte fallen weg.
+- F42 Verbindung weg → von selbst neu verbinden, klein „Chat getrennt“; die Waage läuft ohne Chat weiter.
+- F43 Warteliste und Kanalname überstehen Neuladen.
+- F44 Fertig, wenn jemand im Twitch-Chat `!arg Mieten steigen weiter` schreibt, der Vorschlag nach ein paar Sekunden in
+  der Warteliste steht, Felix ihn mit 2 Klicks als Contra Stufe 4 annimmt und die Karte mit „von @name“ in der Waage steht.
+- F45 Jede Karte zeigt klein ihre feste Nummer („#3“), damit der Chat Einwände darauf richten kann.
+- F46 Einwand ohne oder mit falscher Nummer kommt trotzdem in die Warteliste, mit „Ziel fehlt“; Felix wählt die Karte.
+- F47 `!arg <Text>` ohne Seite geht auch, Felix ordnet ein („probieren wir so“).
+- F48 Klein im Stream: „Mitmachen: !pro … · !contra … · !einwand Nr …“.
+- Von Claude festgelegt: Texte aus dem Chat nur als Text anzeigen (nie als HTML). Steht ein Link im Vorschlag,
+  ist er beim Annehmen schon als Quelle eingetragen. Neues Kartenfeld `von` (freiwillig), Datei bleibt Version 2.
+
+**Technik-Risiko:** Die Seite läuft als `file://`. Ob zwei Fenster dort miteinander reden können
+(`BroadcastChannel` oder das `storage`-Ereignis von `localStorage`), prüft Schritt 10, bevor gebaut wird.
+
+**Schritte:**
+10. **Probe**: Twitch-Chat eines laufenden Kanals im Browser mitlesen (von `file://`); zwei Fenster reden miteinander.
+    Ergebnis: welcher Weg zwischen den Fenstern trägt.
+11. **Regeln + Tests** (`chat.js`, `node --test`): Chat-Zeile lesen (Name, Text); Befehle (F38, F47); Einwand-Nummer
+    prüfen (F46); 3-Minuten-Sperre, 300 Zeichen, doppelte (F41); Annehmen macht eine Karte mit `von` (F40).
+12. **Im Stream**: Nummern an den Karten (F45), Hilfe-Zeile (F48), „N Vorschläge warten“ (F39), „Chat getrennt“ (F42).
+13. **Warteliste-Fenster**: Liste, annehmen (Art, Stufe/Anteil, Ziel) mit 2 Klicks, ablehnen. Klick-Test mit
+    nachgemachtem Chat.
+14. **Verbindung**: Kanalname merken, neu verbinden, Warteliste im Browser (F42, F43). Klick-Test: Neuladen.
+15. **Abnahme (F44)** durch Felix mit echtem Twitch-Chat.
+
+## Später
+
+- YouTube-Chat (F37), englische Oberfläche (F22), mehr als zwei Seiten (F2).
