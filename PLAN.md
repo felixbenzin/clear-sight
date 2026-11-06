@@ -119,7 +119,7 @@ Anlass: Felix' Test-Frage „Wie gut funktioniert die Waage?“ — die Skala �
   Browser-Speicher gesperrt → es gibt nur die beiden mitgelieferten Skalen und die des offenen Themas.
 
 **Schritte:**
-6. **Regeln + Tests** (`bearbeiten.js`, `node --test`): Thema trägt Skala; Datei Version 2 mit Skala, Version 1
+6. ✅ **Regeln + Tests** (2026-11-06, `bearbeiten.js`, 15 Tests in `test/skala.test.js`, 6 Gegenproben rot): Thema trägt Skala; Datei Version 2 mit Skala, Version 1
    → „Gesellschaft“; kaputte Skala abgelehnt; Liste zusammenführen (neueres Datum gewinnt, F32); Löschen lässt
    „Gesellschaft“ (F33); Skala wechseln ändert keine Stufe (F29) und ist per Strg+Z umkehrbar.
 7. **Ansicht + Bedienung**: Leiter und Stufen-Auswahl zeigen die Wörter der Themen-Skala, „Skala: <Name>“ (F34);

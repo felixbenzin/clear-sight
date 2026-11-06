@@ -11,6 +11,7 @@ const THEMA = {
     { id: "k3", art: "einwand", ziel: "k2", anteil: 0.5, text: "e", quelle: "" },
     { id: "k4", art: "einwand", ziel: "k3", anteil: 1, text: "f", quelle: "" },
   ],
+  skala: B.SKALEN[1],
 };
 const datei = (t) => JSON.stringify({ format: "clear-sight", version: 1, ...t });
 const kaputt = (text, grund) => assert.throws(() => B.ausDatei(text), (e) => e instanceof B.Fehler && grund.test(e.message));
@@ -22,12 +23,12 @@ test("Speichern und Öffnen ergibt genau dasselbe Thema", () => {
 test("Datei sagt, was sie ist", () => {
   const d = JSON.parse(B.inDatei(THEMA));
   assert.equal(d.format, "clear-sight");
-  assert.equal(d.version, 1);
+  assert.equal(d.version, 2);
 });
 
 test("kein JSON", () => kaputt("{ kaputt", /lesbar/));
 test("andere Datei", () => kaputt(JSON.stringify({ format: "excel", frage: "x", karten: [] }), /keine Clear-Sight-Datei/));
-test("neuere Version", () => kaputt(JSON.stringify({ format: "clear-sight", version: 2, frage: "x", karten: [] }), /neueren Version/));
+test("neuere Version", () => kaputt(JSON.stringify({ format: "clear-sight", version: 3, frage: "x", karten: [] }), /neueren Version/));
 test("Karten fehlen", () => kaputt(JSON.stringify({ format: "clear-sight", version: 1, frage: "x" }), /Karten/));
 test("leere Frage", () => kaputt(datei({ ...THEMA, frage: " " }), /leer/));
 test("Stufe 11", () => kaputt(datei({ ...THEMA, karten: [{ ...THEMA.karten[0], stufe: 11 }] }), /Karte 1.*Stufe/));

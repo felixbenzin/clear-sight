@@ -100,12 +100,79 @@
     };
   }
 
+  // --- Skalen (F24–F36): 10 Wörter für die Stufen, die Rechnung bleibt gleich. Jedes Thema trägt seine Skala.
+  const MAX_NAME = 40;
+  const MAX_WORT = 60;
+  const SKALEN = [
+    { name: "Gesellschaft", datum: "2026-11-05T00:00:00.000Z", stufen: ["Kleinigkeit", "Bequemlichkeit", "Geldbeutel vieler",
+      "Last für eine Gruppe", "Existenz bedroht", "Leben in Gefahr", "Katastrophe im Land", "Kontinent", "weltweit",
+      "Ende der Zivilisation"] },
+    { name: "Werkzeug", datum: "2026-11-06T00:00:00.000Z", stufen: ["kaum spürbar (Farbe eines Knopfs)", "kleine Bequemlichkeit",
+      "kostet oder spart merklich Zeit", "nervt bei jeder Nutzung", "eine wichtige Aufgabe geht nur schwer",
+      "eine wichtige Aufgabe geht gar nicht", "der Kern ist kaputt", "Ergebnisse falsch oder irreführend",
+      "Daten weg oder Schaden für Nutzer", "unbrauchbar oder gefährlich"] },
+  ];
+  const GRUND = SKALEN[0].name;
+  const gleich = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+  function pruefeSkala(s, datum) {
+    const name = String(s?.name ?? "").trim();
+    if (!name) throw new Fehler("Der Name der Skala ist leer.");
+    if (name.length > MAX_NAME) throw new Fehler(`Der Name der Skala ist zu lang (höchstens ${MAX_NAME} Zeichen).`);
+    if (!Array.isArray(s.stufen) || s.stufen.length !== 10) throw new Fehler("Eine Skala hat genau 10 Stufen.");
+    const stufen = s.stufen.map((w, i) => {
+      if (w != null && typeof w !== "string") throw new Fehler(`Stufe ${i + 1} der Skala ist kein Text.`);
+      const t = (w ?? "").trim();
+      if (t.length > MAX_WORT) throw new Fehler(`Stufe ${i + 1} der Skala ist zu lang (höchstens ${MAX_WORT} Zeichen).`);
+      return t;
+    });
+    if (typeof datum !== "string" || !/^\d{4}-\d\d-\d\dT/.test(datum) || !Number.isFinite(Date.parse(datum))) {
+      throw new Fehler("Das Datum der Skala fehlt oder ist ungültig.");
+    }
+    return { name, stufen, datum };
+  }
+
+  // Skala des Themas setzen oder ändern (F27, F29). `jetzt` als ISO-Text, damit die Liste die neueste erkennt (F32).
+  function skala(thema, s, jetzt) {
+    return { ...thema, skala: pruefeSkala(s, jetzt) };
+  }
+
+  const ordne = (liste) => [...liste].sort((a, b) =>
+    (b.name === GRUND) - (a.name === GRUND) || a.name.localeCompare(b.name, "de"));
+
+  // Skala in die Liste der Vorlagen: neu → dazu; gleicher Name → die neuere bleibt (F32), mit `immer` ersetzt sie (F31).
+  function merkeSkala(liste, s, { immer = false } = {}) {
+    const alt = liste.find((x) => gleich(x.name, s.name));
+    if (alt && !immer && alt.datum >= s.datum) return liste;
+    return ordne([...liste.filter((x) => x !== alt), s]);
+  }
+
+  function loescheSkala(liste, name) {
+    if (gleich(name, GRUND)) throw new Fehler(`Die Skala „${GRUND}“ bleibt immer.`);
+    return liste.filter((x) => !gleich(x.name, name));
+  }
+
+  // Liste aus dem Browser-Speicher. Nichts da → die mitgelieferten. Kaputtes fällt weg, wird aber gemeldet.
+  function leseSkalen(roh) {
+    if (roh == null) return { liste: SKALEN, kaputt: false };
+    let d, kaputt = false;
+    try { d = JSON.parse(roh); } catch { return { liste: SKALEN, kaputt: true }; }
+    if (!Array.isArray(d)) return { liste: SKALEN, kaputt: true };
+    let liste = [];
+    for (const x of d) {
+      try { liste = merkeSkala(liste, pruefeSkala(x, x?.datum)); } catch (e) { if (!(e instanceof Fehler)) throw e; kaputt = true; }
+    }
+    if (!liste.some((x) => x.name === GRUND)) liste = merkeSkala(liste, SKALEN[0]);
+    return { liste, kaputt };
+  }
+
   // --- Datei: speichern und öffnen. Dateien kommen von außen → jede Karte wie eine Eingabe prüfen.
   const FORMAT = "clear-sight";
-  const VERSION = 1;
+  const VERSION = 2;              // 2: mit Skala. Version 1 öffnet weiter und bekommt „Gesellschaft“.
 
   function inDatei(thema) {
-    return JSON.stringify({ format: FORMAT, version: VERSION, frage: thema.frage, karten: thema.karten }, null, 1);
+    return JSON.stringify({ format: FORMAT, version: VERSION, frage: thema.frage, skala: thema.skala ?? SKALEN[0],
+      karten: thema.karten }, null, 1);
   }
 
   function ausDatei(inhalt) {
@@ -127,10 +194,16 @@
         throw e;
       }
     });
-    return { frage: frageText, karten };
+    let sk = SKALEN[0];
+    if (d.version >= 2) {
+      if (d.skala == null) throw new Fehler("Die Skala fehlt.");
+      try { sk = pruefeSkala(d.skala, d.skala.datum); } catch (e) { if (e instanceof Fehler) throw new Fehler("Skala: " + e.message); throw e; }
+    }
+    return { frage: frageText, karten, skala: sk };
   }
 
-  const Bearbeiten = { Fehler, neu, aendern, entfernen, frage, verlauf, link, inDatei, ausDatei };
+  const Bearbeiten = { Fehler, neu, aendern, entfernen, frage, verlauf, link, inDatei, ausDatei,
+    SKALEN, skala, merkeSkala, loescheSkala, leseSkalen };
   if (typeof module !== "undefined" && module.exports) module.exports = Bearbeiten;
   else wurzel.Bearbeiten = Bearbeiten;
 })(typeof window !== "undefined" ? window : globalThis);
