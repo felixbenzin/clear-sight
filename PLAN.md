@@ -126,7 +126,7 @@ Anlass: Felix' Test-Frage „Wie gut funktioniert die Waage?“ — die Skala �
    in der Leiste: Skala wählen, bearbeiten (Name + 10 Felder), kopieren, löschen. Klick-Test erweitert.
 8. ✅ **Merken** (2026-11-06, Klick-Test jetzt 67 Prüfungen, 2 Gegenproben rot; Strg+Z/Y lässt die Liste der Skala im Thema folgen, Öffnen einer Datei nimmt die neuere): Liste bleibt nach Neuladen, Öffnen einer Datei ergänzt die Liste. Klick-Test spielt
    F30 ganz durch (inkl. Neuladen der Seite).
-9. **Abnahme (F30)** durch Felix, auch in OBS.
+9. ✅ **Abnahme (F30)** durch Felix, auch in OBS (2026-11-06, Felix: „stark, funktioniert“).
 
 ## Version 2 (später)
 
