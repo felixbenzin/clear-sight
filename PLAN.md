@@ -87,7 +87,7 @@ eingerückten Baums, kein Code.
 4. ✅ **Speichern + Öffnen** (2026-11-05, 13 Tests + 17 Klick-Prüfungen; Strg+S/Strg+O, Öffnen und Neu per Strg+Z umkehrbar) als Datei, Not-Speicher. Kaputte Datei → Meldung, nichts überschreiben.
    Bekannte Grenzen: Nach dem Neuladen fragt das erste Strg+S wieder nach dem Ort (der Browser merkt sich den
    Datei-Zugriff nicht über `localStorage`). Strg+Z nach „Neu“ holt das Thema zurück, aber nicht den Dateinamen.
-5. **Abnahme (F9)** in OBS: Frage anlegen, 10 Karten, ein Einwand, Gesamtzahl ändert sich sofort.
+5. ✅ **Abnahme (F9)** (2026-11-06, Felix: „sieht schick aus, funktioniert, gut in OBS“) in OBS: Frage anlegen, 10 Karten, ein Einwand, Gesamtzahl ändert sich sofort.
 
 ## Version 2 (später)
 
