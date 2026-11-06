@@ -77,15 +77,56 @@ eingerückten Baums, kein Code.
 
 ## Schritte (jeder endet mit etwas, das man ansehen kann)
 
-1. **Rechen-Regeln + Tests:** Gewicht = 10^Stufe; Einwände: Anteil × was vom Einwand übrig ist, zusammengezählt,
+1. ✅ **Rechen-Regeln + Tests** (2026-11-05, `rechnen.js`, 18 Tests mit `node --test`, Gegenproben rot): Gewicht = 10^Stufe; Einwände: Anteil × was vom Einwand übrig ist, zusammengezählt,
    höchstens 100 %; Einwände gegen Einwände; keine Kreise; Summe pro Seite → Stufe (log10); Satz
    „Contra wiegt N-mal mehr“. Sonderfälle: keine Karten, eine Seite leer, beide Seiten 0.
-2. **Ansicht:** Frage oben, Kopfzeile mit beiden Stufen + Satz, zwei Spalten, Einwände eingerückt, „ohne Quelle“.
+2. ✅ **Ansicht** (2026-11-05, Felix wählt **Look B** „Waage mit Leuchten“, A gestrichen): Frage oben, Kopfzeile mit beiden Stufen + Satz, zwei Spalten, Einwände eingerückt, „ohne Quelle“.
    2 Looks in Nachtblau zur Wahl (Bildschirmfoto).
-3. **Bedienung:** Karte anlegen / ändern / löschen, Stufe und Anteil schnell per Tastatur, Strg+Z.
+3. ✅ **Bedienung** (2026-11-05, `bearbeiten.js` + `app.js`, 11 Tests + Klick-Test `e2e/klick.js` mit 19 Prüfungen): Karte anlegen / ändern / löschen, Stufe und Anteil schnell per Tastatur, Strg+Z.
    Knöpfe so, dass sie im Stream nicht stören (F18).
-4. **Speichern + Öffnen** als Datei, Not-Speicher. Kaputte Datei → Meldung, nichts überschreiben.
-5. **Abnahme (F9)** in OBS: Frage anlegen, 10 Karten, ein Einwand, Gesamtzahl ändert sich sofort.
+4. ✅ **Speichern + Öffnen** (2026-11-05, 13 Tests + 17 Klick-Prüfungen; Strg+S/Strg+O, Öffnen und Neu per Strg+Z umkehrbar) als Datei, Not-Speicher. Kaputte Datei → Meldung, nichts überschreiben.
+   Bekannte Grenzen: Nach dem Neuladen fragt das erste Strg+S wieder nach dem Ort (der Browser merkt sich den
+   Datei-Zugriff nicht über `localStorage`). Strg+Z nach „Neu“ holt das Thema zurück, aber nicht den Dateinamen.
+5. ✅ **Abnahme (F9)** (2026-11-06, Felix: „sieht schick aus, funktioniert, gut in OBS“) in OBS: Frage anlegen, 10 Karten, ein Einwand, Gesamtzahl ändert sich sofort.
+
+## Skala-Vorlagen (ausgefragt 2026-11-06)
+
+Anlass: Felix' Test-Frage „Wie gut funktioniert die Waage?“ — die Skala „Gesellschaft“ (F16) passt dort nicht.
+
+**Entschieden (Runde 5 + 6, 2026-11-06):**
+- F24 Jede Skala hat 10 Stufen und dieselbe Erdbeben-Rechnung (F10). Nur die Wörter ändern sich.
+- F25 Jede Themen-Datei speichert ihre eigene Skala mit (Name, 10 Wörter, Datum).
+- F26 Die Liste der Vorlagen liegt im Browser (`localStorage`). Öffnet man eine Themen-Datei, kommt ihre Skala von
+  selbst in die Liste. Geht der Browser-Speicher verloren, holen die Dateien die Skalen zurück.
+- F27 Neue Skala in der App anlegen: Name + 10 Felder, auch als Kopie einer bestehenden.
+- F28 Beim neuen Thema Skala aus der Liste wählen; vorgewählt „Gesellschaft“.
+- F29 Skala eines Themas später wechseln: Stufen der Karten bleiben gleich, Strg+Z macht es rückgängig.
+- F30 Fertig, wenn Felix eine Skala „Gesundheit“ anlegt, ein Thema damit speichert, den Browser schließt und neu
+  öffnet, „Gesundheit“ in der Liste steht und die Leiter ihre Wörter zeigt.
+- F31 Bearbeitet wird immer die Skala des offenen Themas. Die Liste merkt sich von selbst die neueste Fassung pro
+  Name. Kein Knopf „Als Vorlage speichern“.
+- F32 Gleicher Name, andere Wörter (z. B. aus alter Datei): In der Liste bleibt die Fassung mit dem neueren Datum.
+  Die Datei behält ihre Wörter.
+- F33 Vorlagen lassen sich löschen, nur „Gesellschaft“ bleibt immer.
+- F34 Über der Leiter steht „Skala: <Name>“.
+- F35 Felder dürfen leer bleiben, dann steht dort nur die Zahl.
+- F36 Zweite mitgelieferte Vorlage „Werkzeug“: 1 kaum spürbar (Farbe eines Knopfs) · 2 kleine Bequemlichkeit ·
+  3 kostet oder spart merklich Zeit · 4 nervt bei jeder Nutzung · 5 eine wichtige Aufgabe geht nur schwer ·
+  6 eine wichtige Aufgabe geht gar nicht · 7 der Kern ist kaputt · 8 Ergebnisse falsch oder irreführend ·
+  9 Daten weg oder Schaden für Nutzer · 10 unbrauchbar oder gefährlich.
+- Von Claude festgelegt: Alte Dateien (Version 1, ohne Skala) öffnen weiter und bekommen „Gesellschaft“. Kaputte
+  Skala in einer Datei (nicht 10 Felder, kein Text) → Datei wird abgelehnt wie bisher, nichts überschrieben.
+  Browser-Speicher gesperrt → es gibt nur die beiden mitgelieferten Skalen und die des offenen Themas.
+
+**Schritte:**
+6. ✅ **Regeln + Tests** (2026-11-06, `bearbeiten.js`, 15 Tests in `test/skala.test.js`, 6 Gegenproben rot): Thema trägt Skala; Datei Version 2 mit Skala, Version 1
+   → „Gesellschaft“; kaputte Skala abgelehnt; Liste zusammenführen (neueres Datum gewinnt, F32); Löschen lässt
+   „Gesellschaft“ (F33); Skala wechseln ändert keine Stufe (F29) und ist per Strg+Z umkehrbar.
+7. ✅ **Ansicht + Bedienung** (2026-11-06; Skala löschen = Knopf „Vorlage löschen“, kopieren = im Editor neuen Namen geben): Leiter und Stufen-Auswahl zeigen die Wörter der Themen-Skala, „Skala: <Name>“ (F34);
+   in der Leiste: Skala wählen, bearbeiten (Name + 10 Felder), kopieren, löschen. Klick-Test erweitert.
+8. ✅ **Merken** (2026-11-06, Klick-Test jetzt 67 Prüfungen, 2 Gegenproben rot; Strg+Z/Y lässt die Liste der Skala im Thema folgen, Öffnen einer Datei nimmt die neuere): Liste bleibt nach Neuladen, Öffnen einer Datei ergänzt die Liste. Klick-Test spielt
+   F30 ganz durch (inkl. Neuladen der Seite).
+9. ✅ **Abnahme (F30)** durch Felix, auch in OBS (2026-11-06, Felix: „stark, funktioniert“).
 
 ## Version 2 (später)
 

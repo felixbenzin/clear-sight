@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clear Sight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#1d2c47; --panel:#24375a; --panel2:#2c4470; --fg:#f4f1ea; --muted:#b9c3d6; --line:#41587f;
+  --pro:#5ff0c0; --contra:#ff8c6b; --accent:#ffb347;
+  --f:"Inter",system-ui,sans-serif; --mono:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f);font-size:17px;line-height:1.4}
+.wrap{max-width:1800px;margin:0 auto;padding:28px 32px 20px;display:flex;flex-direction:column;gap:22px;min-height:100vh}
+.oben{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.marke{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:6px 0 0;font-size:clamp(26px,3vw,44px);font-weight:500;line-height:1.05;text-transform:uppercase;text-wrap:balance}
+
+/* Kopfzeile: beide Seiten + Satz */
+.waage{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:16px 0}
+.seite{display:flex;flex-direction:column;gap:2px}
+.seite.contra{text-align:right}
+.seite .name{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.seite.pro .name{color:var(--pro)} .seite.contra .name{color:var(--contra)}
+.seite .stufe{font-family:var(--mono);font-weight:500;letter-spacing:-.02em;font-size:clamp(40px,5vw,72px);line-height:1;font-variant-numeric:tabular-nums}
+.seite .klein{font-size:13px;color:var(--muted)}
+.satz{font-size:clamp(18px,1.8vw,26px);font-weight:500;text-align:center;text-transform:uppercase;max-width:620px;text-wrap:balance}
+.balken{display:block;position:relative;height:60px;margin-top:10px}
+.balken .stange{position:absolute;left:10%;right:10%;top:20px;height:6px;border-radius:3px;background:var(--fg);
+  transform:rotate(var(--kipp,0deg));transition:transform .6s cubic-bezier(.3,1.4,.5,1);box-shadow:0 0 18px color-mix(in oklab,var(--accent) 50%,transparent)}
+.balken .fuss{position:absolute;left:50%;top:26px;width:0;height:0;border:14px solid transparent;border-bottom:26px solid var(--line);transform:translateX(-50%)}
+.waage{border:none;background:var(--panel);border-radius:14px;padding:18px 22px;box-shadow:0 0 40px color-mix(in oklab,var(--accent) 12%,transparent)}
+
+/* Spalten */
+.spalten{display:grid;grid-template-columns:1fr 1fr;gap:28px;flex:1}
+.spalte{display:flex;flex-direction:column;gap:12px;min-width:0}
+.spalte > .titel{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.spalte.pro > .titel{color:var(--pro)} .spalte.contra > .titel{color:var(--contra)}
+.leer{color:var(--muted);font-style:italic;font-size:15px}
+.karte{--c:var(--pro);background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.contra .karte{--c:var(--contra)}
+.karte{border:none;border-left:5px solid var(--c);box-shadow:0 0 0 1px var(--line),0 0 22px color-mix(in oklab,var(--c) calc(var(--glanz,0) * 1%),transparent)}
+.kopf{display:flex;gap:12px;align-items:flex-start}
+.zahl{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:700;font-size:22px;min-width:46px;text-align:center;padding:4px 6px;border-radius:8px;background:color-mix(in oklab,var(--c) calc(var(--staerke,50) * 1%),var(--panel2));color:#13203a;font-weight:500}
+.text{font-size:17px;line-height:1.35;flex:1}
+.fuss{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;color:var(--muted);align-items:center}
+.fuss a{color:var(--muted)}
+.tag{border:1px dashed var(--line);border-radius:22px;padding:1px 9px;font-size:12px}
+.tag.warn{border-color:var(--accent);color:var(--accent)}
+.rest{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
+.rest i{display:block;height:100%;background:var(--c);width:calc(var(--rest) * 100%)}
+.tot{opacity:.55}
+.tot .text{text-decoration:line-through;text-decoration-thickness:1px}
+/* Einwände: eingerückt unter der Karte (F21) */
+.einwaende{display:flex;flex-direction:column;gap:8px;margin:4px 0 0 18px;padding-left:14px;border-left:1px dashed var(--line)}
+.einwand{--c:var(--accent);background:var(--bg);border-left-width:3px}
+.einwand .zahl{font-size:16px;background:color-mix(in oklab,var(--accent) 70%,var(--panel2))}
+.einwand .text{font-size:15px}
+
+/* Leiter (F16) */
+.leiter{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.leiter div{display:flex;gap:5px;align-items:baseline}
+.leiter b{font-family:var(--mono);color:var(--fg);font-size:15px}
+.skalaTitel{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:-14px}
+@media (max-width:900px){.spalten{grid-template-columns:1fr}.leiter{grid-template-columns:repeat(5,1fr)}.waage{grid-template-columns:1fr}.seite.contra{text-align:left}}
+
+/* Bedienung (Schritt 3) — liegt im selben Fenster wie die Zuschauer-Ansicht (F18), also ruhig halten */
+h1{cursor:text;border-radius:6px;outline:none}
+h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
+.karte{cursor:pointer}
+.karte.gewaehlt{box-shadow:0 0 0 2px var(--fg),0 0 26px color-mix(in oklab,var(--fg) 35%,transparent)!important}
+.leiste{position:sticky;bottom:0;z-index:5;background:color-mix(in oklab,var(--bg) 88%,transparent);backdrop-filter:blur(6px);
+  border-top:1px dashed var(--line);padding:10px 0 8px;display:flex;flex-direction:column;gap:6px}
+.leiste.aus{display:none}
+.zeile{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.arten{display:flex;border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.arten button{background:none;border:none;color:var(--muted);padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}
+.arten button[aria-pressed="true"]{background:var(--panel2);color:var(--fg)}
+.arten button[data-art="pro"][aria-pressed="true"]{color:var(--pro)}
+.arten button[data-art="contra"][aria-pressed="true"]{color:var(--contra)}
+.arten button[data-art="einwand"][aria-pressed="true"]{color:var(--accent)}
+.arten button:disabled{opacity:.4;cursor:default}
+.leiste input,.leiste select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;font-size:15px}
+.leiste input:focus,.leiste select:focus,.arten button:focus-visible,.leiste .los:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#eText{flex:1;min-width:240px}
+#eQuelle{width:260px}
+.los{background:var(--accent);color:#1d2c47;border:none;border-radius:22px;padding:8px 18px;font:inherit;font-weight:700;cursor:pointer}
+.nein{background:none;color:var(--muted);border:1px dashed var(--line);border-radius:22px;padding:7px 14px;font:inherit;cursor:pointer}
+.hinweis{font-size:13px;color:var(--muted);min-height:18px}
+.zeile.unten{justify-content:space-between;flex-wrap:nowrap;align-items:flex-start}
+.datei{display:flex;gap:6px;align-items:center;flex-shrink:0;font-size:13px;color:var(--muted)}
+.datei .nein{padding:4px 12px;font-size:13px}
+#dStatus.offen{color:var(--accent)}
+.hinweis .fehler{color:var(--accent)}
+.skala{display:flex;gap:6px;align-items:center}
+.skala select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font:inherit;font-size:13px}
+.datei .nein:disabled{opacity:.4;cursor:default}
+.skalaBox{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:10px 12px}
+.skalaBox[hidden]{display:none}
+#sName{width:260px}
+.sWoerter{display:grid;grid-template-columns:repeat(5,1fr);gap:6px 10px}
+.sWoerter label{display:flex;gap:6px;align-items:center}
+.sWoerter b{font-size:14px;min-width:18px;text-align:right}
+.sWoerter input{flex:1;min-width:0;font-size:14px;padding:5px 8px}
+.hinweis kbd{font-family:var(--f);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="oben">
+    <div><div class="marke" id="marke"></div><h1 id="frage" title="Zum Ändern anklicken"></h1></div>
+  </div>
+  <div class="waage" id="waage"></div>
+  <div class="spalten" id="spalten"></div>
+  <div class="leiste" id="leiste">
+    <div class="skalaBox" id="skalaBox" hidden>
+      <div class="zeile">
+        <input id="sName" autocomplete="off" aria-label="Name der Skala">
+        <button type="button" class="los" id="sOk"></button>
+        <button type="button" class="nein" id="sAb"></button>
+      </div>
+      <div class="sWoerter" id="sWoerter"></div>
+    </div>
+    <div class="zeile">
+      <div class="arten" role="group" aria-label="Kartenart">
+        <button type="button" data-art="pro">Pro</button>
+        <button type="button" data-art="contra">Contra</button>
+        <button type="button" data-art="einwand">Einwand</button>
+      </div>
+      <input id="eText" maxlength="300" autocomplete="off" aria-label="Text der Karte">
+      <select id="eStufe" aria-label="Stufe"></select>
+      <select id="eAnteil" aria-label="Anteil"></select>
+      <input id="eQuelle" autocomplete="off" aria-label="Quelle (Link oder Text)">
+      <button type="button" class="los" id="eLos"></button>
+      <button type="button" class="nein" id="eNein" hidden></button>
+    </div>
+    <div class="zeile unten">
+      <div class="hinweis" id="hinweis"></div>
+      <div class="datei">
+        <span class="skala"><span id="sLabel"></span><select id="sWahl" aria-label="Skala"></select>
+          <button type="button" class="nein" id="sAuf"></button><button type="button" class="nein" id="sWeg"></button></span>
+        <span id="dStatus"></span>
+        <button type="button" class="nein" id="dNeu"></button>
+        <button type="button" class="nein" id="dAuf"></button>
+        <button type="button" class="nein" id="dSpeichern"></button>
+        <input type="file" id="dWahl" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </div>
+  <div class="skalaTitel" id="skalaTitel"></div>
+  <div class="leiter" id="leiter"></div>
+</div>
+<script src="rechnen.js"></script>
+<script src="bearbeiten.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
