@@ -106,12 +106,26 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
 .sWoerter b{font-size:14px;min-width:18px;text-align:right}
 .sWoerter input{flex:1;min-width:0;font-size:14px;padding:5px 8px}
 .hinweis kbd{font-family:var(--f);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 2px}
+
+/* Chat (Version 2): Hilfe-Zeile oben rechts (F48), Nummern + „von @name“ an den Karten (F45, F40) */
+.chat{text-align:right;font-size:14px;color:var(--muted);max-width:44%;display:flex;flex-direction:column;gap:4px;padding-top:4px}
+.chat[hidden]{display:none}
+#chatHilfe b{color:var(--fg);font-weight:500}
+#chatStand{font-size:13px}
+#chatStand .warten{color:var(--accent);font-weight:700}
+#chatStand .getrennt{color:var(--contra)}
+.fuss .nr{font-variant-numeric:tabular-nums;color:var(--fg);opacity:.7}
+.fuss .von{color:var(--fg)}
+.chatLeiste{gap:6px;font-size:13px}
+.chatLeiste input{width:180px;font-size:13px!important;padding:4px 10px!important}
+.chatLeiste .nein{padding:4px 12px;font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="oben">
     <div><div class="marke" id="marke"></div><h1 id="frage" title="Zum Ändern anklicken"></h1></div>
+    <div class="chat" id="chat" hidden><div id="chatHilfe"></div><div id="chatStand"></div></div>
   </div>
   <div class="waage" id="waage"></div>
   <div class="spalten" id="spalten"></div>
@@ -137,6 +151,11 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
       <button type="button" class="los" id="eLos"></button>
       <button type="button" class="nein" id="eNein" hidden></button>
     </div>
+    <div class="zeile chatLeiste">
+      <input id="cKanal" autocomplete="off" maxlength="26" aria-label="Twitch-Kanal">
+      <button type="button" class="nein" id="cAn"></button>
+      <button type="button" class="nein" id="cListe"></button>
+    </div>
     <div class="zeile unten">
       <div class="hinweis" id="hinweis"></div>
       <div class="datei">
@@ -155,6 +174,7 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
 </div>
 <script src="rechnen.js"></script>
 <script src="bearbeiten.js"></script>
+<script src="chat.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -197,6 +197,98 @@ const SP = process.argv[2];
   await page.screenshot({ path: SP + "/e2e-4.png" });
   await page.click("#sAuf");
   await page.screenshot({ path: SP + "/e2e-5.png" });
+  await page.click("#sAb");
+  // --- Version 2: Chat (F37–F48) mit nachgemachtem Twitch-Server
+  const ctx = page.context();
+  let server = null;
+  const gesendet = [];
+  await ctx.routeWebSocket("wss://irc-ws.chat.twitch.tv:443", (ws) => {
+    server = ws;
+    ws.onMessage((m) => {
+      gesendet.push(String(m));
+      if (String(m).startsWith("JOIN")) ws.send(":justinfan1.tmi.twitch.tv 366 justinfan1 #felixtest :End of /NAMES list");
+    });
+  });
+  const sag = (name, text) => server.send(`@badge-info=;display-name=${name};id=x :${name.toLowerCase()}!${name.toLowerCase()}@x.tmi.twitch.tv PRIVMSG #felixtest :${text}`);
+  const chatStand = () => page.textContent("#chatStand");
+  const warteAufStand = (soll) => warte((s) => document.querySelector("#chatStand").textContent === s, soll);
+  await page.click("#dNeu");
+  await page.click("#frage"); await page.keyboard.type("Mietendeckel?"); await page.keyboard.press("Enter");
+  await karte("p", "Neubau dauert", 6);
+  await pruefe("Nummer an der Karte (F45)", await page.textContent(".karte .nr"), "#1");
+  await pruefe("Chat aus: keine Hilfe-Zeile", String(await page.isVisible("#chat")), "false");
+  await page.fill("#cKanal", "x"); await page.click("#cAn");
+  await pruefe("Kanal ungültig", await page.textContent("#hinweis"), "Der Twitch-Kanal ist ungültig (3–25 Zeichen: a–z, 0–9, _).");
+  await page.fill("#cKanal", "FelixTest"); await page.click("#cAn");
+  await warteAufStand("noch keine Vorschläge");
+  await pruefe("Verbunden", await chatStand(), "noch keine Vorschläge");
+  await pruefe("Anonym beigetreten", String(gesendet.some((m) => m.startsWith("NICK justinfan")) && gesendet.includes("JOIN #felixtest")), "true");
+  await pruefe("Hilfe-Zeile (F48)", await page.textContent("#chatHilfe"), "Mitmachen im Chat: !pro Text · !contra Text · !einwand Nr Text");
+  sag("AnnaB", "!arg Mieten steigen weiter");
+  await warteAufStand("1 Vorschlag wartet");
+  await pruefe("Vorschlag kommt an (F39)", await chatStand(), "1 Vorschlag wartet");
+  sag("annab", "!pro nochmal");                     // Sperre (F41)
+  sag("Dora", "nur ein normaler Satz");              // kein Befehl
+  sag("Bert", "!einwand 9 Quatsch");                 // falsche Nummer (F46)
+  sag("Carla", "!einwand 1 <b>Dauert</b> nicht so lang");
+  await warteAufStand("3 Vorschläge warten");
+  await pruefe("Sperre + kein Befehl fallen weg", await chatStand(), "3 Vorschläge warten");
+  server.send("PING :tmi.twitch.tv");
+  await page.waitForTimeout(300);
+  await pruefe("PING → PONG", String(gesendet.includes("PONG :tmi.twitch.tv")), "true");
+  // Warteliste-Fenster
+  const [wl] = await Promise.all([ctx.waitForEvent("page"), page.click("#cListe")]);
+  await wl.waitForLoadState();
+  wl.on("pageerror", (e) => fehler.push("Warteliste: " + e.message));
+  const wv = (id, sel) => `.v[data-id=${id}] ${sel}`;
+  await pruefe("Warteliste: 3 Vorschläge", String(await wl.$$eval(".v", (e) => e.length)), "3");
+  await pruefe("Warteliste: Text", await wl.textContent(wv("v1", ".text")), "Mieten steigen weiter");
+  await pruefe("ohne Seite: Stufe gesperrt", String(await wl.isDisabled(wv("v1", "[data-wert='4']"))), "true");
+  await pruefe("HTML aus dem Chat bleibt Text", await wl.textContent(wv("v3", ".text")), "<b>Dauert</b> nicht so lang");
+  await pruefe("Einwand mit Nummer: Ziel gesetzt", await wl.inputValue(wv("v3", "select")), "k1");
+  await pruefe("Einwand falsche Nummer: Ziel fehlt (F46)", await wl.textContent(wv("v2", ".ziel")), "Ziel fehlt – bitte Karte wählen");
+  await wl.screenshot({ path: SP + "/e2e-7.png" });
+  // F44: zwei Klicks — Contra, Stufe 4
+  await wl.click(wv("v1", "[data-art=contra]"));
+  await wl.click(wv("v1", "[data-wert='4']"));
+  await warte(() => [...document.querySelectorAll(".karte .text")].some((e) => e.textContent === "Mieten steigen weiter"));
+  await pruefe("F44: Karte mit von @name", await page.textContent(".karte:has-text('Mieten steigen weiter') .von"), "von @AnnaB");
+  await pruefe("F44: Zahl ändert sich", await satz(), "Pro wiegt 100-mal mehr");
+  await pruefe("F44: Stream zählt runter", await chatStand(), "2 Vorschläge warten");
+  await wl.waitForFunction(() => document.querySelectorAll(".v").length === 2, null, { timeout: 3000 }).catch(() => {});
+  await pruefe("Warteliste zählt mit", String(await wl.$$eval(".v", (e) => e.length)), "2");
+  // Einwand ohne Ziel → Hinweis, dann Ziel wählen
+  await wl.click(wv("v2", "[data-wert='5']"));
+  await pruefe("Einwand ohne Ziel", await wl.textContent(wv("v2", ".fehler")), "Erst ein Ziel wählen.");
+  await wl.selectOption(wv("v2", "select"), "k1");
+  await wl.click(wv("v2", "[data-wert='3']"));
+  await warte(() => document.querySelectorAll(".einwand").length === 1);
+  await pruefe("Einwand angenommen", await page.textContent(".einwand .von"), "von @Bert");
+  await pruefe("Einwand wirkt", await page.textContent(".einwand .zahl"), "−30");
+  // Ablehnen
+  await wl.waitForFunction(() => document.querySelectorAll(".v").length === 1, null, { timeout: 3000 }).catch(() => {});
+  await wl.click(wv("v3", ".weg"));
+  await warteAufStand("noch keine Vorschläge");
+  await pruefe("Ablehnen", await chatStand(), "noch keine Vorschläge");
+  await page.click("body", { position: { x: 5, y: 5 } }); await page.keyboard.press("Control+z");
+  await pruefe("Strg+Z nimmt angenommene Karte zurück", String(await page.$$eval(".einwand", (e) => e.length)), "0");
+  // F43: Neuladen behält Kanal + Warteliste und verbindet neu
+  sag("Emil", "!contra Zu teuer");
+  await warteAufStand("1 Vorschlag wartet");
+  await page.reload();
+  await warteAufStand("1 Vorschlag wartet");
+  await pruefe("Neuladen: Warteliste bleibt (F43)", await chatStand(), "1 Vorschlag wartet");
+  await pruefe("Neuladen: Kanal bleibt", await page.inputValue("#cKanal"), "felixtest");
+  // F42: Verbindung weg → „Chat getrennt“, dann von selbst wieder da
+  const alterServer = server;
+  await alterServer.close();
+  await warteAufStand("Chat getrennt – verbinde neu …");
+  await pruefe("Getrennt (F42)", await chatStand(), "Chat getrennt – verbinde neu …");
+  await warte(() => document.querySelector("#chatStand").textContent === "1 Vorschlag wartet");
+  await pruefe("Von selbst neu verbunden", String(server !== alterServer && (await chatStand()) === "1 Vorschlag wartet"), "true");
+  await page.screenshot({ path: SP + "/e2e-6.png" });
+  await page.click("#cAn");
+  await pruefe("Chat aus: Zeile weg", String(await page.isVisible("#chat")), "false");
   console.log(ergebnis.join("\n"));
   console.log("Fehler im Browser:", fehler.length ? fehler : "keine");
   await browser.close();

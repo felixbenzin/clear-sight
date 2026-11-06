@@ -171,10 +171,10 @@ selbst, keine Bibliothek. YouTube braucht einen Google-Schlüssel mit Tageslimit
     Windows mit `\\wsl.localhost\…` — prüft Schritt 15.
 11. ✅ **Regeln + Tests** (2026-11-06, `chat.js` + `von` in `bearbeiten.js`, 28 Tests in `test/chat.test.js`, 7 Gegenproben rot): Chat-Zeile lesen (Name, Text); Befehle (F38, F47); Einwand-Nummer
     prüfen (F46); 3-Minuten-Sperre, 300 Zeichen, doppelte (F41); Annehmen macht eine Karte mit `von` (F40).
-12. **Im Stream**: Nummern an den Karten (F45), Hilfe-Zeile (F48), „N Vorschläge warten“ (F39), „Chat getrennt“ (F42).
-13. **Warteliste-Fenster**: Liste, annehmen (Art, Stufe/Anteil, Ziel) mit 2 Klicks, ablehnen. Klick-Test mit
+12. ✅ **Im Stream** (2026-11-06): Nummern an den Karten (F45), Hilfe-Zeile (F48), „N Vorschläge warten“ (F39), „Chat getrennt“ (F42).
+13. ✅ **Warteliste-Fenster** (2026-11-06, `warteliste.html` + `warteliste.js`; „2 Klicks“ = Art wählen, Klick auf die Stufe nimmt an): Liste, annehmen (Art, Stufe/Anteil, Ziel) mit 2 Klicks, ablehnen. Klick-Test mit
     nachgemachtem Chat.
-14. **Verbindung**: Kanalname merken, neu verbinden, Warteliste im Browser (F42, F43). Klick-Test: Neuladen.
+14. ✅ **Verbindung** (2026-11-06; Klick-Test jetzt 96 Prüfungen mit nachgemachtem Twitch-Server, 3 Gegenproben rot): Kanalname merken, neu verbinden, Warteliste im Browser (F42, F43). Klick-Test: Neuladen.
 15. **Abnahme (F44)** durch Felix mit echtem Twitch-Chat.
 
 ## Später

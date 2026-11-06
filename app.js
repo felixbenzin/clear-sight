@@ -25,6 +25,14 @@ const TEXT = {
   skalaGemerkt: (n) => `Skala „${n}“ übernommen und als Vorlage gemerkt · Strg+Z holt die vorige zurück`,
   skalaGeloescht: (n) => `Vorlage „${n}“ gelöscht. Das Thema behält seine Wörter. Zurückholen: Skala bearbeiten → Übernehmen.`,
   skalenKaputt: "Einige gemerkte Skalen waren kaputt und fehlen. Eine Kopie liegt im Browser (cs-skalen-kaputt).",
+  nr: (id) => "#" + (/^k\d+$/.test(id) ? id.slice(1) : id), von: (n) => `von @${n}`,
+  mitmachen: "Mitmachen im Chat: <b>!pro</b> Text · <b>!contra</b> Text · <b>!einwand</b> Nr Text",
+  warten: (n) => (n === 1 ? "1 Vorschlag wartet" : `${n} Vorschläge warten`), keinerWartet: "noch keine Vorschläge",
+  chatGetrennt: "Chat getrennt – verbinde neu …", chatVerbindet: "Chat verbindet …",
+  kanalPlatz: "Twitch-Kanal", chatAn: "Chat an", chatAus: "Chat aus", warteliste: (n) => `Warteliste (${n})`,
+  kanalFalsch: "Der Twitch-Kanal ist ungültig (3–25 Zeichen: a–z, 0–9, _).",
+  angenommen: (n) => `Vorschlag von @${n} angenommen · Strg+Z nimmt die Karte zurück`,
+  gibtsNicht: "Diesen Vorschlag gibt es nicht mehr.",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -124,7 +132,8 @@ function karteHtml(k, karten) {
     if (rest === 0) fuss.append(el("span", "tag", TEXT.entkraeftet));
     else if (rest < 1) fuss.append(el("span", "tag", `${TEXT.wirkt} −${Math.round(k.anteil * rest * 100)} %`));
   }
-  fuss.prepend(quelleTag(k.quelle));
+  fuss.prepend(el("span", "nr", TEXT.nr(k.id)), quelleTag(k.quelle));
+  if (k.von) fuss.append(el("span", "von", TEXT.von(k.von)));
   d.append(kopf);
   if (k.art === "argument" && rest < 1) { const r = el("div", "rest"); r.style.setProperty("--rest", rest); r.append(el("i")); d.append(r); }
   d.append(fuss);
@@ -439,6 +448,122 @@ $("skalaBox").addEventListener("keydown", (e) => {
   if (e.key === "Escape") { schliesseSkala(); e.target.blur(); }
 });
 
+// --- Chat (Version 2, F37–F48). Dieses Fenster hält die Verbindung und ist das einzige, das die Warteliste schreibt.
+// Das Warteliste-Fenster (warteliste.html) liest sie aus localStorage und schickt Annehmen/Ablehnen per BroadcastChannel.
+const CHAT_URL = "wss://irc-ws.chat.twitch.tv:443";
+const WL = "cs-warteliste", KANAL = "cs-kanal", KANAL_AN = "cs-kanal-an";
+const lsLies = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSchreib = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch {} };
+let warteliste = Chat.lies(lsLies(WL));
+const chat = { kanal: lsLies(KANAL) || "", an: false, drin: false, versuche: 0, ws: null, timer: null };
+let funk = null;
+try { funk = new BroadcastChannel("clear-sight"); } catch {}
+
+function merkeWarteliste() { lsSchreib(WL, JSON.stringify(warteliste)); zeichneChat(); }
+
+function chatAn(eingabe) {
+  const kanal = String(eingabe).trim().toLowerCase().replace(/^#/, "");
+  if (!/^[a-z0-9_]{3,25}$/.test(kanal)) { melde(TEXT.kanalFalsch, true); return; }
+  Object.assign(chat, { kanal, an: true, versuche: 0 });
+  lsSchreib(KANAL, kanal); lsSchreib(KANAL_AN, "1");
+  verbinde();
+  melde();
+}
+
+function chatAus() {
+  chat.an = false; chat.drin = false;
+  lsSchreib(KANAL_AN, null);
+  clearTimeout(chat.timer);
+  const ws = chat.ws; chat.ws = null;
+  if (ws) ws.close();
+  zeichneChat();
+}
+
+function verbinde() {
+  clearTimeout(chat.timer);
+  if (chat.ws) { const alt = chat.ws; chat.ws = null; alt.close(); }
+  chat.drin = false;
+  const ws = new WebSocket(CHAT_URL);
+  chat.ws = ws;
+  ws.onopen = () => {
+    ws.send("CAP REQ :twitch.tv/tags");
+    ws.send("PASS SCHMOOPIIE");                                   // anonym mitlesen, kein Login
+    ws.send("NICK justinfan" + (10000 + Math.floor(Math.random() * 80000)));
+    ws.send("JOIN #" + chat.kanal);
+  };
+  ws.onmessage = (e) => { if (chat.ws === ws) String(e.data).split("\r\n").forEach((z) => z && chatZeile(z)); };
+  ws.onclose = () => {                                            // F42: von selbst neu verbinden, Waage läuft weiter
+    if (chat.ws !== ws) return;
+    chat.ws = null; chat.drin = false;
+    if (chat.an) chat.timer = setTimeout(verbinde, Math.min(30000, 1000 * 2 ** chat.versuche++));
+    zeichneChat();
+  };
+  zeichneChat();
+}
+
+function chatZeile(z) {
+  const r = Chat.leseZeile(z);
+  if (!r) return;
+  if (r.typ === "ping") { chat.ws.send("PONG :tmi.twitch.tv"); return; }
+  if (r.typ === "drin") { chat.drin = true; chat.versuche = 0; zeichneChat(); return; }
+  const b = Chat.befehl(r.text);
+  if (!b) return;
+  const n = Chat.nimmAuf(warteliste, { name: r.name, ...b }, Date.now(), thema().karten);
+  if (n.grund) return;                                            // Sperre, doppelt, voll: still verwerfen (F41)
+  warteliste = n.stand;
+  merkeWarteliste();
+}
+
+function zeichneChat() {
+  const n = warteliste.vorschlaege.length;
+  $("chat").hidden = !chat.an;
+  $("chatHilfe").innerHTML = TEXT.mitmachen;                      // fester Text aus TEXT, nie Chat-Inhalt
+  const stand = $("chatStand");
+  if (!chat.drin) stand.replaceChildren(el("span", "getrennt", chat.versuche ? TEXT.chatGetrennt : TEXT.chatVerbindet));
+  else stand.replaceChildren(el("span", n ? "warten" : "", n ? TEXT.warten(n) : TEXT.keinerWartet));
+  if (document.activeElement !== $("cKanal")) $("cKanal").value = chat.kanal;
+  $("cAn").textContent = chat.an ? TEXT.chatAus : TEXT.chatAn;
+  $("cListe").textContent = TEXT.warteliste(n);
+}
+
+// Befehle aus dem Warteliste-Fenster
+function antworte(id, fehler) { if (funk) funk.postMessage({ typ: "antwort", id, fehler }); }
+function nimmAn(id, wahl) {
+  const v = warteliste.vorschlaege.find((x) => x.id === id);
+  if (!v) { antworte(id, TEXT.gibtsNicht); return; }
+  try {
+    const r = Chat.annehmen(thema(), v, wahl || {});
+    gewaehlt = null;
+    aendere(r.thema);
+  } catch (e) {
+    if (!(e instanceof Bearbeiten.Fehler)) throw e;
+    antworte(id, e.message);
+    return;
+  }
+  warteliste = Chat.entferne(warteliste, id);
+  merkeWarteliste();
+  melde(TEXT.angenommen(v.name));
+  antworte(id, null);
+}
+function lehneAb(id) {
+  warteliste = Chat.entferne(warteliste, id);
+  merkeWarteliste();
+  antworte(id, null);
+}
+if (funk) funk.onmessage = (e) => {
+  const m = e.data || {};
+  if (m.typ === "annehmen") nimmAn(m.id, m.wahl);
+  if (m.typ === "ablehnen") lehneAb(m.id);
+};
+
+$("cKanal").placeholder = TEXT.kanalPlatz;
+$("cAn").addEventListener("click", () => (chat.an ? chatAus() : chatAn($("cKanal").value)));
+$("cKanal").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); chatAn($("cKanal").value); e.target.blur(); }
+  if (e.key === "Escape") e.target.blur();
+});
+$("cListe").addEventListener("click", () => window.open("warteliste.html", "cs-warteliste", "width=600,height=900"));
+
 // --- Start
 const woerter = $("sWoerter");
 for (let i = 1; i <= 10; i++) {
@@ -473,5 +598,7 @@ $("dWahl").addEventListener("change", async () => {
 });
 melde();
 zeichne();
+if (chat.kanal && lsLies(KANAL_AN)) { chat.an = true; verbinde(); }    // F43: nach Neuladen wieder verbinden
+zeichneChat();
 if (alt) melde(TEXT.zurueckGeholt);
 if (skalenKaputt) melde(TEXT.skalenKaputt, true);
