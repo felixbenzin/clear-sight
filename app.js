@@ -18,8 +18,13 @@ const TEXT = {
   hilfe: "Karte anklicken, dann: <kbd>1</kbd>–<kbd>0</kbd> Stufe/Anteil · <kbd>E</kbd> Einwand · <kbd>Enter</kbd> ändern · " +
          "<kbd>Entf</kbd> löschen · <kbd>P</kbd>/<kbd>C</kbd> neue Karte · <kbd>Strg</kbd>+<kbd>Z</kbd> zurück · " +
          "<kbd>Strg</kbd>+<kbd>Y</kbd> vor · <kbd>H</kbd> Leiste aus/an",
-  leiter: ["Kleinigkeit", "Bequemlichkeit", "Geldbeutel vieler", "Last für eine Gruppe", "Existenz bedroht",
-           "Leben in Gefahr", "Katastrophe im Land", "Kontinent", "weltweit", "Ende der Zivilisation"],
+  skala: "Skala", skalaTitel: (n) => `Skala: ${n}`, nurHier: (n) => `${n} (nur dieses Thema)`,
+  skalaBearbeiten: "Skala bearbeiten", skalaLoeschen: "Vorlage löschen", skalaNamePlatz: "Name der Skala",
+  uebernehmen: "Übernehmen", wortPlatz: (i) => `Stufe ${i} – leer = nur die Zahl`,
+  skalaGewechselt: (n) => `Skala „${n}“ · Strg+Z holt die vorige zurück`,
+  skalaGemerkt: (n) => `Skala „${n}“ übernommen und als Vorlage gemerkt · Strg+Z holt die vorige zurück`,
+  skalaGeloescht: (n) => `Vorlage „${n}“ gelöscht. Das Thema behält seine Wörter. Zurückholen: Skala bearbeiten → Übernehmen.`,
+  skalenKaputt: "Einige gemerkte Skalen waren kaputt und fehlen. Eine Kopie liegt im Browser (cs-skalen-kaputt).",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -48,9 +53,25 @@ function schreibeNotspeicher() {
   } catch {}
 }
 
+// --- Skala-Vorlagen (F26): Liste im Browser. Geht sie verloren, holen die Themen-Dateien die Skalen zurück.
+const SK = "cs-skalen";
+let skalenKaputt = false;
+let skalen = (() => {
+  let roh = null;
+  try { roh = localStorage.getItem(SK); } catch {}
+  const r = Bearbeiten.leseSkalen(roh);
+  if (r.kaputt) { skalenKaputt = true; try { localStorage.setItem(SK + "-kaputt", roh); } catch {} }   // nicht still wegwerfen
+  return r.liste;
+})();
+function schreibeSkalen() { try { localStorage.setItem(SK, JSON.stringify(skalen)); } catch {} }
+const gleicherName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+const vorlage = (name) => skalen.find((s) => gleicherName(s.name, name));
+const leeresThema = () => ({ frage: TEXT.startFrage, karten: [], skala: skalen[0] });   // skalen[0] = Gesellschaft (F28)
+
 // --- Zustand
 const alt = leseNotspeicher();
-const verlauf = Bearbeiten.verlauf(alt ? alt.thema : { frage: TEXT.startFrage, karten: [] });
+const verlauf = Bearbeiten.verlauf(alt ? alt.thema : leeresThema());
+let gemerkt = verlauf.jetzt().skala;   // die Skala, die die Liste zuletzt vom Thema übernommen hat
 let gewaehlt = null;              // id der angeklickten Karte
 let art = "pro";                  // was die Leiste anlegt: pro | contra | einwand
 let bearbeitet = null;            // id der Karte, die gerade in der Leiste geändert wird
@@ -120,6 +141,11 @@ function karteHtml(k, karten) {
 function zeichne() {
   const { karten, frage } = thema();
   if (gewaehlt && !finde(gewaehlt)) gewaehlt = null;      // z. B. nach Strg+Z
+  if (thema().skala !== gemerkt) {                         // Skala bearbeitet, gewechselt oder Strg+Z → Liste folgt (F31)
+    gemerkt = thema().skala;
+    skalen = Bearbeiten.merkeSkala(skalen, gemerkt, { immer: true });
+    schreibeSkalen();
+  }
   if (bearbeitet && !finde(bearbeitet)) beendeAendern();
   $("marke").textContent = TEXT.marke;
   if ($("frage").contentEditable !== "true") $("frage").textContent = frage;
@@ -150,6 +176,9 @@ function zeichne() {
     args.forEach((k) => col.append(karteHtml(k, karten)));
     sp.append(col);
   }
+  const sk = thema().skala;
+  $("skalaTitel").textContent = TEXT.skalaTitel(sk.name);
+  $("leiter").replaceChildren(...sk.stufen.map((t, i) => { const d = el("div"); d.append(el("b", "", i + 1), el("span", "", t)); return d; }));
   zeichneLeiste();
   schreibeNotspeicher();
 }
@@ -168,6 +197,14 @@ function zeichneLeiste() {
   $("eText").placeholder = ziel ? TEXT.einwandGegen(kurz(ziel.text)) : TEXT.textPlatz[art];
   $("eLos").textContent = bearbeitet ? TEXT.aendern : TEXT.anlegen;
   $("eNein").hidden = !bearbeitet;
+  const sk = thema().skala;
+  [...$("eStufe").options].forEach((o, i) => { o.textContent = TEXT.stufe(i + 1) + (sk.stufen[i] ? " · " + sk.stufen[i] : ""); });
+  const wahl = $("sWahl");
+  const opts = skalen.map((s) => new Option(s.name, s.name));
+  if (!vorlage(sk.name)) opts.unshift(new Option(TEXT.nurHier(sk.name), sk.name));
+  wahl.replaceChildren(...opts);
+  wahl.value = vorlage(sk.name) ? vorlage(sk.name).name : sk.name;
+  $("sWeg").disabled = !vorlage(sk.name) || gleicherName(sk.name, Bearbeiten.SKALEN[0].name);
   const offen = ungespeichert();
   $("dStatus").textContent = (datei.name || TEXT.ohneDatei) + " · " + (offen ? TEXT.nichtGespeichert : TEXT.gespeichert);
   $("dStatus").classList.toggle("offen", offen);
@@ -211,6 +248,10 @@ function lade(inhalt, name, handle) {
     const t = Bearbeiten.ausDatei(inhalt);
     gewaehlt = null;
     if (bearbeitet) beendeAendern();
+    schliesseSkala();
+    skalen = Bearbeiten.merkeSkala(skalen, t.skala);      // Skala der Datei kommt in die Liste; neuere bleibt (F26, F32)
+    gemerkt = t.skala;
+    schreibeSkalen();
     Object.assign(datei, { name, handle, stand: t });
     aendere(t);
     melde(TEXT.geoeffnet(name));
@@ -232,12 +273,47 @@ async function oeffnen() {
 }
 
 function neuesThema() {
-  const t = { frage: TEXT.startFrage, karten: [] };
+  const t = leeresThema();
   gewaehlt = null;
   if (bearbeitet) beendeAendern();
+  schliesseSkala();
   Object.assign(datei, { name: "", handle: null, stand: t });
   aendere(t);
   melde(TEXT.neuesThema);
+}
+
+// --- Skala wählen (F28, F29), bearbeiten (F27, F31), Vorlage löschen (F33)
+function waehleSkala(name) {
+  const s = vorlage(name);
+  if (!s || s === thema().skala) return;
+  aendere({ ...thema(), skala: s });
+  melde(TEXT.skalaGewechselt(s.name));
+}
+
+function oeffneSkala() {
+  const sk = thema().skala;
+  $("sName").value = sk.name;
+  document.querySelectorAll(".sWort").forEach((f, i) => { f.value = sk.stufen[i]; });
+  $("skalaBox").hidden = false;
+  $("leiste").classList.remove("aus");
+  $("sName").focus();
+}
+
+function schliesseSkala() { $("skalaBox").hidden = true; }
+
+function uebernimmSkala() {
+  const s = { name: $("sName").value, stufen: [...document.querySelectorAll(".sWort")].map((f) => f.value) };
+  let neu = null;
+  const ok = versuche(() => { neu = Bearbeiten.skala(thema(), s, new Date().toISOString()); aendere(neu); });
+  if (ok) { schliesseSkala(); melde(TEXT.skalaGemerkt(neu.skala.name)); }
+}
+
+function loescheVorlage() {
+  const name = thema().skala.name;
+  if (!versuche(() => { skalen = Bearbeiten.loescheSkala(skalen, name); })) return;
+  schreibeSkalen();
+  zeichneLeiste();
+  melde(TEXT.skalaGeloescht(name));
 }
 
 function waehleArt(a) { art = a; zeichneLeiste(); }
@@ -352,9 +428,33 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// --- Skala-Leiste
+$("sWahl").addEventListener("change", () => waehleSkala($("sWahl").value));
+$("sAuf").addEventListener("click", () => ($("skalaBox").hidden ? oeffneSkala() : schliesseSkala()));
+$("sWeg").addEventListener("click", loescheVorlage);
+$("sOk").addEventListener("click", uebernimmSkala);
+$("sAb").addEventListener("click", schliesseSkala);
+$("skalaBox").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); uebernimmSkala(); }
+  if (e.key === "Escape") { schliesseSkala(); e.target.blur(); }
+});
+
 // --- Start
+const woerter = $("sWoerter");
 for (let i = 1; i <= 10; i++) {
-  $("eStufe").append(new Option(`${TEXT.stufe(i)} · ${TEXT.leiter[i - 1]}`, String(i)));
+  const l = el("label"); const f = el("input", "sWort");
+  f.maxLength = 60; f.autocomplete = "off"; f.placeholder = TEXT.wortPlatz(i); f.setAttribute("aria-label", TEXT.stufe(i));
+  l.append(el("b", "", i), f); woerter.append(l);
+}
+$("sName").placeholder = TEXT.skalaNamePlatz;
+$("sName").maxLength = 40;
+$("sLabel").textContent = TEXT.skala;
+$("sAuf").textContent = TEXT.skalaBearbeiten;
+$("sWeg").textContent = TEXT.skalaLoeschen;
+$("sOk").textContent = TEXT.uebernehmen;
+$("sAb").textContent = TEXT.abbrechen;
+for (let i = 1; i <= 10; i++) {
+  $("eStufe").append(new Option(TEXT.stufe(i), String(i)));
   $("eAnteil").append(new Option(TEXT.anteil(i * 10), String(i)));
 }
 $("eStufe").value = "3";
@@ -371,8 +471,7 @@ $("dWahl").addEventListener("change", async () => {
   const f = $("dWahl").files[0];
   if (f) lade(await f.text(), f.name, null);
 });
-const l = $("leiter");
-TEXT.leiter.forEach((t, i) => { const d = el("div"); d.append(el("b", "", i + 1), el("span", "", t)); l.append(d); });
 melde();
 zeichne();
 if (alt) melde(TEXT.zurueckGeholt);
+if (skalenKaputt) melde(TEXT.skalenKaputt, true);

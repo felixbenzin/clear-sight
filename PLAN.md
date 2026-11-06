@@ -122,9 +122,9 @@ Anlass: Felix' Test-Frage „Wie gut funktioniert die Waage?“ — die Skala �
 6. ✅ **Regeln + Tests** (2026-11-06, `bearbeiten.js`, 15 Tests in `test/skala.test.js`, 6 Gegenproben rot): Thema trägt Skala; Datei Version 2 mit Skala, Version 1
    → „Gesellschaft“; kaputte Skala abgelehnt; Liste zusammenführen (neueres Datum gewinnt, F32); Löschen lässt
    „Gesellschaft“ (F33); Skala wechseln ändert keine Stufe (F29) und ist per Strg+Z umkehrbar.
-7. **Ansicht + Bedienung**: Leiter und Stufen-Auswahl zeigen die Wörter der Themen-Skala, „Skala: <Name>“ (F34);
+7. ✅ **Ansicht + Bedienung** (2026-11-06; Skala löschen = Knopf „Vorlage löschen“, kopieren = im Editor neuen Namen geben): Leiter und Stufen-Auswahl zeigen die Wörter der Themen-Skala, „Skala: <Name>“ (F34);
    in der Leiste: Skala wählen, bearbeiten (Name + 10 Felder), kopieren, löschen. Klick-Test erweitert.
-8. **Merken** (`localStorage`): Liste bleibt nach Neuladen, Öffnen einer Datei ergänzt die Liste. Klick-Test spielt
+8. ✅ **Merken** (2026-11-06, Klick-Test jetzt 67 Prüfungen, 2 Gegenproben rot; Strg+Z/Y lässt die Liste der Skala im Thema folgen, Öffnen einer Datei nimmt die neuere): Liste bleibt nach Neuladen, Öffnen einer Datei ergänzt die Liste. Klick-Test spielt
    F30 ganz durch (inkl. Neuladen der Seite).
 9. **Abnahme (F30)** durch Felix, auch in OBS.
 

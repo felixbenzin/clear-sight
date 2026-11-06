@@ -64,6 +64,7 @@ h1{margin:6px 0 0;font-size:clamp(26px,3vw,44px);font-weight:500;line-height:1.0
 .leiter{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;font-size:13px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
 .leiter div{display:flex;gap:5px;align-items:baseline}
 .leiter b{font-family:var(--mono);color:var(--fg);font-size:15px}
+.skalaTitel{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:-14px}
 @media (max-width:900px){.spalten{grid-template-columns:1fr}.leiter{grid-template-columns:repeat(5,1fr)}.waage{grid-template-columns:1fr}.seite.contra{text-align:left}}
 
 /* Bedienung (Schritt 3) — liegt im selben Fenster wie die Zuschauer-Ansicht (F18), also ruhig halten */
@@ -94,6 +95,16 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
 .datei .nein{padding:4px 12px;font-size:13px}
 #dStatus.offen{color:var(--accent)}
 .hinweis .fehler{color:var(--accent)}
+.skala{display:flex;gap:6px;align-items:center}
+.skala select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font:inherit;font-size:13px}
+.datei .nein:disabled{opacity:.4;cursor:default}
+.skalaBox{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:10px 12px}
+.skalaBox[hidden]{display:none}
+#sName{width:260px}
+.sWoerter{display:grid;grid-template-columns:repeat(5,1fr);gap:6px 10px}
+.sWoerter label{display:flex;gap:6px;align-items:center}
+.sWoerter b{font-size:14px;min-width:18px;text-align:right}
+.sWoerter input{flex:1;min-width:0;font-size:14px;padding:5px 8px}
 .hinweis kbd{font-family:var(--f);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:0 2px}
 </style>
 </head>
@@ -105,6 +116,14 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
   <div class="waage" id="waage"></div>
   <div class="spalten" id="spalten"></div>
   <div class="leiste" id="leiste">
+    <div class="skalaBox" id="skalaBox" hidden>
+      <div class="zeile">
+        <input id="sName" autocomplete="off" aria-label="Name der Skala">
+        <button type="button" class="los" id="sOk"></button>
+        <button type="button" class="nein" id="sAb"></button>
+      </div>
+      <div class="sWoerter" id="sWoerter"></div>
+    </div>
     <div class="zeile">
       <div class="arten" role="group" aria-label="Kartenart">
         <button type="button" data-art="pro">Pro</button>
@@ -121,6 +140,8 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
     <div class="zeile unten">
       <div class="hinweis" id="hinweis"></div>
       <div class="datei">
+        <span class="skala"><span id="sLabel"></span><select id="sWahl" aria-label="Skala"></select>
+          <button type="button" class="nein" id="sAuf"></button><button type="button" class="nein" id="sWeg"></button></span>
         <span id="dStatus"></span>
         <button type="button" class="nein" id="dNeu"></button>
         <button type="button" class="nein" id="dAuf"></button>
@@ -129,6 +150,7 @@ h1[contenteditable="true"]{box-shadow:0 0 0 2px var(--accent)}
       </div>
     </div>
   </div>
+  <div class="skalaTitel" id="skalaTitel"></div>
   <div class="leiter" id="leiter"></div>
 </div>
 <script src="rechnen.js"></script>
